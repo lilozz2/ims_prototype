@@ -1,0 +1,498 @@
+import React, { useState } from 'react';
+import { Plus, Trash2, Pencil, Play, Settings, BarChart3, Package, ArrowRight } from 'lucide-react';
+
+// ── Units of Measure ──────────────────────────────────────────────
+
+function UomSection({ uom }) {
+  const grouped = uom.reduce((acc, u) => {
+    if (!acc[u.type]) acc[u.type] = [];
+    acc[u.type].push(u);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Units of Measure</h2>
+        <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Available measurement units (read-only in this prototype)</p>
+      </div>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Unit Name</th>
+                <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Symbol</th>
+                <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {uom.map(u => (
+                <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors duration-150">
+                  <td className="py-3 px-4 text-sm font-medium" style={{ color: '#1E1B4B' }}>{u.name}</td>
+                  <td className="py-3 px-3">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#F1F5F9', color: '#4F46E5' }}>
+                      {u.symbol}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
+                      style={{
+                        backgroundColor: u.type === 'volume' ? '#EFF6FF' : '#F0FDF4',
+                        color: u.type === 'volume' ? '#3B82F6' : '#10B981',
+                      }}
+                    >
+                      {u.type}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── UoM Conversions ───────────────────────────────────────────────
+
+function UomConversionsSection({ uom, conversions, onUpdate }) {
+  const [adding, setAdding] = useState(false);
+  const [newConv, setNewConv] = useState({ fromId: '', toId: '', factor: '' });
+
+  const getSymbol = (id) => {
+    const u = uom.find(u => u.id === id);
+    return u ? u.symbol : id;
+  };
+
+  const getName = (id) => {
+    const u = uom.find(u => u.id === id);
+    return u ? u.name : id;
+  };
+
+  const handleAdd = () => {
+    if (!newConv.fromId || !newConv.toId || !newConv.factor) return;
+    const conv = {
+      id: 'conv-' + Date.now().toString(36),
+      fromId: newConv.fromId,
+      toId: newConv.toId,
+      factor: parseFloat(newConv.factor),
+    };
+    onUpdate.addConversion({ conversion: conv });
+    setAdding(false);
+    setNewConv({ fromId: '', toId: '', factor: '' });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>UoM Conversions</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Define conversion factors between units</p>
+        </div>
+        <button
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+          style={{ backgroundColor: '#6366F1', color: '#fff' }}
+          onClick={() => setAdding(true)}
+        >
+          <Plus size={14} />
+          Add Conversion
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {adding && (
+          <div className="p-4 border-b border-slate-200 bg-indigo-50">
+            <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#6366F1' }}>New Conversion</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[140px]">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>From</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  value={newConv.fromId}
+                  onChange={e => setNewConv(p => ({ ...p, fromId: e.target.value }))}
+                >
+                  <option value="">Select unit</option>
+                  {uom.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
+                  ))}
+                </select>
+              </div>
+              <ArrowRight size={16} className="mt-5 flex-shrink-0" style={{ color: '#94A3B8' }} />
+              <div className="flex-1 min-w-[140px]">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>To</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  value={newConv.toId}
+                  onChange={e => setNewConv(p => ({ ...p, toId: e.target.value }))}
+                >
+                  <option value="">Select unit</option>
+                  {uom.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-28">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Factor</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="e.g. 128"
+                  value={newConv.factor}
+                  onChange={e => setNewConv(p => ({ ...p, factor: e.target.value }))}
+                  step="any"
+                  min="0"
+                />
+              </div>
+              <div className="flex items-end gap-2 mt-5">
+                <button
+                  className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  onClick={handleAdd}
+                >
+                  Save
+                </button>
+                <button
+                  className="px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 hover:bg-slate-100"
+                  style={{ color: '#64748B' }}
+                  onClick={() => { setAdding(false); setNewConv({ fromId: '', toId: '', factor: '' }); }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {conversions.length === 0 && !adding ? (
+          <div className="flex flex-col items-center justify-center py-12 px-6" style={{ color: '#64748B' }}>
+            <ArrowRight size={36} className="mb-3 opacity-30" />
+            <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No conversions defined</p>
+            <p className="text-sm text-center">Add conversion factors between units of measure.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>From</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>To</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Factor</th>
+                  <th className="py-3 px-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {conversions.map(conv => (
+                  <tr key={conv.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors duration-150">
+                    <td className="py-3 px-4 text-sm font-medium" style={{ color: '#1E1B4B' }}>
+                      {getName(conv.fromId)}
+                      <span className="ml-1.5 font-mono text-xs" style={{ color: '#94A3B8' }}>({getSymbol(conv.fromId)})</span>
+                    </td>
+                    <td className="py-3 px-3 text-sm" style={{ color: '#1E1B4B' }}>
+                      {getName(conv.toId)}
+                      <span className="ml-1.5 font-mono text-xs" style={{ color: '#94A3B8' }}>({getSymbol(conv.toId)})</span>
+                    </td>
+                    <td className="py-3 px-3 text-sm font-mono font-medium" style={{ color: '#6366F1' }}>
+                      {conv.factor}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
+                        style={{ color: '#EF4444' }}
+                        onClick={() => onUpdate.deleteConversion({ conversionId: conv.id })}
+                        aria-label="Delete conversion"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Locations ─────────────────────────────────────────────────────
+
+function LocationsSection({ locations, onUpdate, onOpenModal }) {
+  const typeColor = {
+    Warehouse: { bg: '#EFF6FF', text: '#3B82F6' },
+    'Cold Storage': { bg: '#F0F9FF', text: '#0EA5E9' },
+    'Distribution Centre': { bg: '#F0FDF4', text: '#10B981' },
+    Other: { bg: '#F8FAFC', text: '#64748B' },
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Locations</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Warehouses and storage facilities</p>
+        </div>
+        <button
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+          style={{ backgroundColor: '#6366F1', color: '#fff' }}
+          onClick={() => onOpenModal('addLocation', {})}
+        >
+          <Plus size={14} />
+          Add Location
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {locations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-6" style={{ color: '#64748B' }}>
+            <Package size={36} className="mb-3 opacity-30" />
+            <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No locations configured</p>
+            <p className="text-sm text-center">Add warehouses and storage facilities to manage inventory.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Location ID</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Name</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Type</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Capacity</th>
+                  <th className="py-3 px-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {locations.map(loc => {
+                  const colors = typeColor[loc.type] || typeColor.Other;
+                  return (
+                    <tr key={loc.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors duration-150">
+                      <td className="py-3 px-4">
+                        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>
+                          {loc.id}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-sm font-medium" style={{ color: '#1E1B4B' }}>{loc.name}</td>
+                      <td className="py-3 px-3">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          style={{ backgroundColor: colors.bg, color: colors.text }}
+                        >
+                          {loc.type}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-sm" style={{ color: '#64748B' }}>
+                        {loc.capacity.toLocaleString()} units
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-indigo-50"
+                            style={{ color: '#6366F1' }}
+                            onClick={() => onOpenModal('editLocation', { location: loc })}
+                            aria-label={`Edit ${loc.name}`}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
+                            style={{ color: '#EF4444' }}
+                            onClick={() => onUpdate.deleteLocation({ locationId: loc.id })}
+                            aria-label={`Delete ${loc.name}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Production ────────────────────────────────────────────────────
+
+function ProductionSection({ data, onOpenRecipeBuilder, onExecuteRecipe, onDeleteRecipe }) {
+  const getItemName = (itemId) => {
+    for (const cat of data.categories) {
+      const item = cat.items.find(i => i.id === itemId);
+      if (item) return item.name;
+    }
+    return itemId;
+  };
+
+  const summarizeNodes = (nodes) => {
+    if (nodes.length === 0) return <span className="opacity-40 italic">None</span>;
+    return nodes.map((n, i) => (
+      <span key={n.id}>
+        {i > 0 && <span style={{ color: '#CBD5E1' }}>, </span>}
+        <span className="font-medium" style={{ color: '#1E1B4B' }}>{getItemName(n.itemId)}</span>
+        <span style={{ color: '#64748B' }}> ×{n.qty} ({n.formFactor})</span>
+      </span>
+    ));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Production Recipes</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Define and execute production transformations</p>
+        </div>
+        <button
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+          style={{ backgroundColor: '#6366F1', color: '#fff' }}
+          onClick={() => onOpenRecipeBuilder(null)}
+        >
+          <Plus size={14} />
+          New Recipe
+        </button>
+      </div>
+
+      {data.recipes.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-12 px-6" style={{ color: '#64748B' }}>
+          <Settings size={36} className="mb-3 opacity-30" />
+          <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No recipes defined</p>
+          <p className="text-sm text-center">Create a production recipe to define how inventory is transformed.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {data.recipes.map(recipe => (
+            <div
+              key={recipe.id}
+              className="bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-200 transition-all duration-150"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold mb-2" style={{ color: '#1E1B4B' }}>{recipe.name}</h3>
+                  <div className="flex items-start gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Sources</p>
+                      <p className="text-xs">{summarizeNodes(recipe.sources)}</p>
+                    </div>
+                    <ArrowRight size={14} className="mt-4 flex-shrink-0" style={{ color: '#CBD5E1' }} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Destinations</p>
+                      <p className="text-xs">{summarizeNodes(recipe.destinations)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
+                    style={{ borderColor: '#6366F1', color: '#6366F1' }}
+                    onClick={() => onOpenRecipeBuilder(recipe)}
+                    aria-label={`Edit recipe ${recipe.name}`}
+                  >
+                    <Pencil size={12} />
+                    Edit
+                  </button>
+                  <button
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+                    style={{ backgroundColor: '#10B981', color: '#fff' }}
+                    onClick={() => onExecuteRecipe(recipe)}
+                    aria-label={`Execute recipe ${recipe.name}`}
+                  >
+                    <Play size={12} />
+                    Execute
+                  </button>
+                  <button
+                    className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
+                    style={{ color: '#EF4444' }}
+                    onClick={() => onDeleteRecipe({ recipeId: recipe.id })}
+                    aria-label={`Delete recipe ${recipe.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── GlobalSettings (main) ─────────────────────────────────────────
+
+const subSections = [
+  { id: 'uom', label: 'Units of Measure' },
+  { id: 'conversions', label: 'UoM Conversions' },
+  { id: 'locations', label: 'Locations' },
+  { id: 'production', label: 'Production' },
+];
+
+export default function GlobalSettings({ data, onUpdate, onOpenModal, onOpenRecipeBuilder, onExecuteRecipe, onDeleteRecipe }) {
+  const [activeSection, setActiveSection] = useState('uom');
+
+  return (
+    <div>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs mb-4" style={{ color: '#64748B' }}>
+        <span>Catalog Manager</span>
+        <span className="opacity-40">›</span>
+        <span style={{ color: '#6366F1' }}>Global Settings</span>
+      </div>
+
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold" style={{ color: '#1E1B4B' }}>Global Settings</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>System-wide configuration for units, locations and production</p>
+        </div>
+      </div>
+
+      <div className="flex gap-6">
+        {/* Left sub-nav */}
+        <div className="w-48 flex-shrink-0">
+          <div className="bg-white rounded-xl border border-slate-200 p-2">
+            {subSections.map(s => (
+              <button
+                key={s.id}
+                className="w-full text-left px-3 py-2 rounded-lg mb-0.5 cursor-pointer text-sm transition-all duration-150"
+                style={
+                  activeSection === s.id
+                    ? { backgroundColor: '#EEF2FF', color: '#4F46E5', fontWeight: 500 }
+                    : { color: '#64748B' }
+                }
+                onClick={() => setActiveSection(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {activeSection === 'uom' && <UomSection uom={data.uom} />}
+          {activeSection === 'conversions' && (
+            <UomConversionsSection uom={data.uom} conversions={data.uomConversions} onUpdate={onUpdate} />
+          )}
+          {activeSection === 'locations' && (
+            <LocationsSection locations={data.locations} onUpdate={onUpdate} onOpenModal={onOpenModal} />
+          )}
+          {activeSection === 'production' && (
+            <ProductionSection
+              data={data}
+              onOpenRecipeBuilder={onOpenRecipeBuilder}
+              onExecuteRecipe={onExecuteRecipe}
+              onDeleteRecipe={onDeleteRecipe}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
