@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronDown, Plus, Package, Layers } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Package, Layers, Play } from 'lucide-react';
 
-function LotRow({ lot }) {
+function LotRow({ lot, onLotClick }) {
   const [highlighted, setHighlighted] = useState(lot.highlightNew);
   const timerRef = useRef(null);
 
@@ -15,8 +15,9 @@ function LotRow({ lot }) {
 
   return (
     <tr
-      className="border-t border-slate-100 transition-colors duration-150 hover:bg-slate-50"
+      className="border-t border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-pointer"
       style={highlighted ? { backgroundColor: '#fffbeb' } : {}}
+      onClick={(e) => { e.stopPropagation(); onLotClick(lot); }}
     >
       <td className="py-2 pl-12 pr-3" style={{ fontSize: '13px', color: '#1E1B4B', fontFamily: 'monospace' }}>
         {lot.id}
@@ -40,7 +41,7 @@ function LotRow({ lot }) {
   );
 }
 
-function ItemRow({ item, category, onCreateLot }) {
+function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -81,15 +82,29 @@ function ItemRow({ item, category, onCreateLot }) {
           </span>
         </td>
         <td className="py-3 px-3 text-right">
-          <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
-            style={{ borderColor: '#6366F1', color: '#6366F1', backgroundColor: 'transparent' }}
-            onClick={e => { e.stopPropagation(); onCreateLot(item); }}
-            aria-label={`Create lot for ${item.name}`}
-          >
-            <Plus size={12} />
-            Create Lot
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
+              style={{ borderColor: '#6366F1', color: '#6366F1', backgroundColor: 'transparent' }}
+              onClick={e => { e.stopPropagation(); onCreateLot(item); }}
+              aria-label={`Create lot for ${item.name}`}
+            >
+              <Plus size={12} />
+              Create Lot
+            </button>
+            {item.recipe && (
+              <button
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-slate-50"
+                style={{ borderColor: '#94A3B8', color: '#475569', backgroundColor: 'transparent' }}
+                onClick={e => { e.stopPropagation(); onProduceLot(item); }}
+                aria-label={`Produce lot for ${item.name}`}
+                title="Produce lot"
+              >
+                <Play size={12} />
+                Produce
+              </button>
+            )}
+          </div>
         </td>
       </tr>
 
@@ -148,7 +163,7 @@ function ItemRow({ item, category, onCreateLot }) {
                     </thead>
                     <tbody>
                       {item.lots.map(lot => (
-                        <LotRow key={lot.id} lot={lot} />
+                        <LotRow key={lot.id} lot={lot} onLotClick={onLotClick} />
                       ))}
                     </tbody>
                   </table>
@@ -162,7 +177,7 @@ function ItemRow({ item, category, onCreateLot }) {
   );
 }
 
-export default function CatalogView({ data, selectedCategoryId, onCreateLot, onOpenModal }) {
+export default function CatalogView({ data, selectedCategoryId, onCreateLot, onOpenModal, onLotClick, onProduceLot }) {
   const [activeTab, setActiveTab] = useState('lots');
   const category = data.categories.find(c => c.id === selectedCategoryId);
 
@@ -242,6 +257,8 @@ export default function CatalogView({ data, selectedCategoryId, onCreateLot, onO
                       item={item}
                       category={category}
                       onCreateLot={(item) => onCreateLot(selectedCategoryId, item)}
+                      onLotClick={onLotClick}
+                      onProduceLot={onProduceLot}
                     />
                   ))}
                 </tbody>

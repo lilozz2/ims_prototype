@@ -441,6 +441,7 @@ export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
             defaultFormFactor,
             lots: [],
             warehousePolicies: [],
+            recipe: null,
           };
       onSubmit(item);
       setSubmitting(false);
@@ -838,27 +839,222 @@ export function AddLocationModal({ locations, existingLocation, onSubmit, onClos
   );
 }
 
+// ── LotTransactionHistoryModal ────────────────────────────────────
+
+export function LotTransactionHistoryModal({ lot, onClose }) {
+  const panelRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement;
+
+    if (panelRef.current) {
+      const focusable = panelRef.current.querySelectorAll(
+        'input, select, textarea, button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length > 0) focusable[0].focus();
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusable = [...panelRef.current.querySelectorAll(
+          'input, select, textarea, button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )];
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousFocusRef.current && previousFocusRef.current.focus) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [onClose]);
+
+  const transactions = lot.transactions || [];
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-30"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Panel */}
+      <div
+        ref={panelRef}
+        className="fixed top-0 right-0 bottom-0 z-40 bg-white flex flex-col slide-in-right"
+        style={{ width: '480px', boxShadow: '-4px 0 24px rgba(0,0,0,0.12)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Transaction history for ${lot.id}`}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+          <div>
+            <h2
+              className="text-base font-semibold"
+              style={{ color: '#1E1B4B', fontFamily: 'monospace' }}
+            >
+              {lot.id}
+            </h2>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs" style={{ color: '#64748B' }}>{lot.formFactor}</span>
+              <span
+                className="text-xs font-semibold"
+                style={{ color: '#10B981' }}
+              >
+                Qty: {lot.qty.toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <button
+            className="p-1.5 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={18} style={{ color: '#64748B' }} />
+          </button>
+        </div>
+
+        {/* Section label */}
+        <div className="px-6 pt-4 pb-2 flex-shrink-0">
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#94A3B8' }}>
+            Transaction History
+          </p>
+        </div>
+
+        {/* Transaction list */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          {transactions.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-sm" style={{ color: '#94A3B8' }}>
+              No transactions recorded.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {transactions.map(txn => {
+                const isBuyIn = txn.type === 'buy-in';
+                return (
+                  <div
+                    key={txn.id}
+                    className="flex items-start justify-between gap-3 py-3 border-b border-slate-100"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded font-medium flex-shrink-0"
+                          style={
+                            isBuyIn
+                              ? { backgroundColor: '#6366F1', color: '#fff' }
+                              : { backgroundColor: '#F59E0B', color: '#1C1917' }
+                          }
+                        >
+                          {isBuyIn ? 'Buy-in' : 'Production'}
+                        </span>
+                        <span className="text-xs" style={{ color: '#94A3B8' }}>
+                          {new Date(txn.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      {!isBuyIn && txn.reference && (
+                        <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
+                          Ref:{' '}
+                          <span style={{ fontFamily: 'monospace', color: '#1E1B4B' }}>
+                            {txn.reference}
+                          </span>
+                        </p>
+                      )}
+                      {isBuyIn && txn.buyInPrice != null && (
+                        <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
+                          Buy-in price: <span style={{ color: '#10B981', fontWeight: 500 }}>${txn.buyInPrice?.toFixed(2) ?? '—'}</span>
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className="text-sm font-semibold flex-shrink-0"
+                      style={{ color: txn.qtyChange >= 0 ? '#10B981' : '#EF4444' }}
+                    >
+                      {txn.qtyChange >= 0 ? '+' : ''}{txn.qtyChange.toLocaleString()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── ExecutionModal ────────────────────────────────────────────────
 
-export function ExecutionModal({ recipe, data, onExecute, onClose }) {
-  const [sourceLocationId, setSourceLocationId] = useState('');
+export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
+  const initialSourceLocationIds = {};
+  (recipe?.sources || []).forEach((_, idx) => { initialSourceLocationIds[idx] = ''; });
+
+  const [sourceLocationIds, setSourceLocationIds] = useState(initialSourceLocationIds);
   const [destLocationId, setDestLocationId] = useState('');
   const [multiplier, setMultiplier] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
   const getItemName = (itemId) => {
     for (const cat of data.categories) {
-      const item = cat.items.find(i => i.id === itemId);
-      if (item) return item.name;
+      const found = cat.items.find(i => i.id === itemId);
+      if (found) return found.name;
     }
     return itemId;
   };
 
+  const allSourcesSelected = (recipe?.sources || []).every((_, idx) => !!sourceLocationIds[idx]);
+
   const handleExecute = () => {
-    if (!sourceLocationId || !destLocationId || multiplier < 1) return;
+    if (!allSourcesSelected || !destLocationId || mult < 1) return;
     setSubmitting(true);
     setTimeout(() => {
-      onExecute({ recipe, sourceLocationId, destLocationId, multiplier: parseInt(multiplier, 10) });
+      const newBatchId = 'LOT-' + Date.now().toString(36);
+      const buyInTxn = {
+        id: 'TXN-' + Date.now(),
+        type: 'buy-in',
+        timestamp: new Date().toISOString(),
+        qtyChange: recipe.output.qty * mult,
+        reference: null,
+      };
+      const newLot = {
+        id: newBatchId,
+        formFactor: recipe.output.formFactor,
+        qty: recipe.output.qty * mult,
+        buyInPrice: 0,
+        highlightNew: true,
+        transactions: [buyInTxn],
+      };
+      onExecute({
+        recipe,
+        sourceLocationIds,
+        destLocationId,
+        multiplier: mult,
+        newBatchId,
+        newLot,
+      });
       setSubmitting(false);
     }, 200);
   };
@@ -866,7 +1062,23 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
   const mult = parseInt(multiplier, 10) || 1;
 
   return (
-    <ModalShell title={`Execute — ${recipe?.name}`} onClose={onClose}>
+    <ModalShell title={`Produce — ${item?.name}`} onClose={onClose}>
+      {/* Read-only item + recipe info */}
+      <div
+        className="rounded-xl p-4 mb-5"
+        style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}
+      >
+        <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#94A3B8' }}>
+          Item
+        </p>
+        <p className="text-sm font-semibold mb-0.5" style={{ color: '#1E1B4B' }}>{item?.name}</p>
+        <p className="text-xs font-mono" style={{ color: '#64748B' }}>{item?.sku}</p>
+        <div className="mt-3 pt-3 border-t border-slate-200">
+          <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Recipe</p>
+          <p className="text-sm font-semibold" style={{ color: '#6366F1' }}>{recipe?.name}</p>
+        </div>
+      </div>
+
       {/* Recipe summary */}
       <div
         className="rounded-xl p-4 mb-5"
@@ -876,19 +1088,13 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
           Recipe Summary
         </p>
         <div className="flex items-start gap-4">
-          {/* Sources */}
           <div className="flex-1">
             <p className="text-xs font-semibold mb-1.5" style={{ color: '#10B981' }}>Sources</p>
-            {recipe?.sources.map(src => (
-              <div key={src.id} className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
+            {recipe?.sources.map((src, idx) => (
+              <div key={idx} className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
                 <span className="font-medium">{getItemName(src.itemId)}</span>
                 <span style={{ color: '#64748B' }}> — {src.formFactor}</span>
-                <span
-                  className="ml-1.5 font-semibold"
-                  style={{ color: '#6366F1' }}
-                >
-                  ×{src.qty}
-                </span>
+                <span className="ml-1.5 font-semibold" style={{ color: '#6366F1' }}>×{src.qty}</span>
               </div>
             ))}
           </div>
@@ -899,34 +1105,37 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
             </svg>
           </div>
 
-          {/* Destinations */}
           <div className="flex-1">
-            <p className="text-xs font-semibold mb-1.5" style={{ color: '#6366F1' }}>Outputs</p>
-            {recipe?.destinations.map(dest => (
-              <div key={dest.id} className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
-                <span className="font-medium">{getItemName(dest.itemId)}</span>
-                <span style={{ color: '#64748B' }}> — {dest.formFactor}</span>
-                <span
-                  className="ml-1.5 font-semibold"
-                  style={{ color: '#6366F1' }}
-                >
-                  ×{dest.qty}
-                </span>
+            <p className="text-xs font-semibold mb-1.5" style={{ color: '#6366F1' }}>Output</p>
+            {recipe?.output && (
+              <div className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
+                <span className="font-medium">{item?.name}</span>
+                <span style={{ color: '#64748B' }}> — {recipe.output.formFactor}</span>
+                <span className="ml-1.5 font-semibold" style={{ color: '#6366F1' }}>×{recipe.output.qty}</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
 
-      {/* Execution parameters */}
-      <FormField label="Source Location" required>
-        <SelectInput value={sourceLocationId} onChange={e => setSourceLocationId(e.target.value)}>
-          <option value="">Select source location...</option>
-          {data.locations.map(loc => (
-            <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
-          ))}
-        </SelectInput>
-      </FormField>
+      {/* Per-source warehouse dropdowns */}
+      {recipe?.sources.map((src, idx) => (
+        <FormField
+          key={idx}
+          label={`Source for ${getItemName(src.itemId)} — ${src.formFactor}`}
+          required
+        >
+          <SelectInput
+            value={sourceLocationIds[idx] || ''}
+            onChange={e => setSourceLocationIds(prev => ({ ...prev, [idx]: e.target.value }))}
+          >
+            <option value="">Select source location...</option>
+            {data.locations.map(loc => (
+              <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
+            ))}
+          </SelectInput>
+        </FormField>
+      ))}
 
       <FormField label="Destination Location" required>
         <SelectInput value={destLocationId} onChange={e => setDestLocationId(e.target.value)}>
@@ -937,7 +1146,7 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
         </SelectInput>
       </FormField>
 
-      <FormField label="Multiplier" required hint="Run this recipe N times">
+      <FormField label="Multiplier" required hint="Multiply all quantities by this factor">
         <NumberInput
           value={multiplier}
           onChange={e => setMultiplier(e.target.value)}
@@ -947,7 +1156,7 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
         />
       </FormField>
 
-      {/* Preview */}
+      {/* Reactive preview */}
       {mult >= 1 && (
         <div
           className="rounded-xl p-4 mb-2"
@@ -958,24 +1167,24 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
           </p>
           <div className="space-y-1.5">
             <p className="text-xs font-semibold" style={{ color: '#64748B' }}>Sources consumed:</p>
-            {recipe?.sources.map(src => (
-              <div key={src.id} className="flex items-center justify-between text-xs">
-                <span style={{ color: '#1E1B4B' }}>{getItemName(src.itemId)} ({src.formFactor})</span>
+            {recipe?.sources.map((src, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <span style={{ color: '#1E1B4B' }}>{src.formFactor}</span>
                 <span className="font-semibold" style={{ color: '#EF4444' }}>
                   -{(src.qty * mult).toLocaleString()}
                 </span>
               </div>
             ))}
             <div className="border-t border-indigo-200 mt-2 pt-2">
-              <p className="text-xs font-semibold" style={{ color: '#64748B' }}>Outputs created:</p>
-              {recipe?.destinations.map(dest => (
-                <div key={dest.id} className="flex items-center justify-between text-xs mt-1">
-                  <span style={{ color: '#1E1B4B' }}>{getItemName(dest.itemId)} ({dest.formFactor})</span>
+              <p className="text-xs font-semibold" style={{ color: '#64748B' }}>Output created:</p>
+              {recipe?.output && (
+                <div className="flex items-center justify-between text-xs mt-1">
+                  <span style={{ color: '#1E1B4B' }}>{recipe.output.formFactor}</span>
                   <span className="font-semibold" style={{ color: '#10B981' }}>
-                    +{(dest.qty * mult).toLocaleString()}
+                    +{(recipe.output.qty * mult).toLocaleString()}
                   </span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -984,9 +1193,9 @@ export function ExecutionModal({ recipe, data, onExecute, onClose }) {
       <SubmitButton
         loading={submitting}
         onClick={handleExecute}
-        disabled={!sourceLocationId || !destLocationId || mult < 1}
+        disabled={!allSourcesSelected || !destLocationId || mult < 1}
       >
-        Confirm Transform
+        Confirm Produce
       </SubmitButton>
     </ModalShell>
   );

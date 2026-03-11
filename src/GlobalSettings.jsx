@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Pencil, Play, Settings, BarChart3, Package, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Pencil, Package, ArrowRight } from 'lucide-react';
 
 // ── Units of Measure ──────────────────────────────────────────────
 
-function UomSection({ uom }) {
+export function UomSection({ uom }) {
   const grouped = uom.reduce((acc, u) => {
     if (!acc[u.type]) acc[u.type] = [];
     acc[u.type].push(u);
@@ -58,7 +58,7 @@ function UomSection({ uom }) {
 
 // ── UoM Conversions ───────────────────────────────────────────────
 
-function UomConversionsSection({ uom, conversions, onUpdate }) {
+export function UomConversionsSection({ uom, conversions, onUpdate }) {
   const [adding, setAdding] = useState(false);
   const [newConv, setNewConv] = useState({ fromId: '', toId: '', factor: '' });
 
@@ -223,7 +223,7 @@ function UomConversionsSection({ uom, conversions, onUpdate }) {
 
 // ── Locations ─────────────────────────────────────────────────────
 
-function LocationsSection({ locations, onUpdate, onOpenModal }) {
+export function LocationsSection({ locations, onUpdate, onOpenModal }) {
   const typeColor = {
     Warehouse: { bg: '#EFF6FF', text: '#3B82F6' },
     'Cold Storage': { bg: '#F0F9FF', text: '#0EA5E9' },
@@ -321,120 +321,15 @@ function LocationsSection({ locations, onUpdate, onOpenModal }) {
   );
 }
 
-// ── Production ────────────────────────────────────────────────────
-
-function ProductionSection({ data, onOpenRecipeBuilder, onExecuteRecipe, onDeleteRecipe }) {
-  const getItemName = (itemId) => {
-    for (const cat of data.categories) {
-      const item = cat.items.find(i => i.id === itemId);
-      if (item) return item.name;
-    }
-    return itemId;
-  };
-
-  const summarizeNodes = (nodes) => {
-    if (nodes.length === 0) return <span className="opacity-40 italic">None</span>;
-    return nodes.map((n, i) => (
-      <span key={n.id}>
-        {i > 0 && <span style={{ color: '#CBD5E1' }}>, </span>}
-        <span className="font-medium" style={{ color: '#1E1B4B' }}>{getItemName(n.itemId)}</span>
-        <span style={{ color: '#64748B' }}> ×{n.qty} ({n.formFactor})</span>
-      </span>
-    ));
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Production Recipes</h2>
-          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Define and execute production transformations</p>
-        </div>
-        <button
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
-          style={{ backgroundColor: '#6366F1', color: '#fff' }}
-          onClick={() => onOpenRecipeBuilder(null)}
-        >
-          <Plus size={14} />
-          New Recipe
-        </button>
-      </div>
-
-      {data.recipes.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-12 px-6" style={{ color: '#64748B' }}>
-          <Settings size={36} className="mb-3 opacity-30" />
-          <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No recipes defined</p>
-          <p className="text-sm text-center">Create a production recipe to define how inventory is transformed.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {data.recipes.map(recipe => (
-            <div
-              key={recipe.id}
-              className="bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-200 transition-all duration-150"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold mb-2" style={{ color: '#1E1B4B' }}>{recipe.name}</h3>
-                  <div className="flex items-start gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Sources</p>
-                      <p className="text-xs">{summarizeNodes(recipe.sources)}</p>
-                    </div>
-                    <ArrowRight size={14} className="mt-4 flex-shrink-0" style={{ color: '#CBD5E1' }} />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Destinations</p>
-                      <p className="text-xs">{summarizeNodes(recipe.destinations)}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
-                    style={{ borderColor: '#6366F1', color: '#6366F1' }}
-                    onClick={() => onOpenRecipeBuilder(recipe)}
-                    aria-label={`Edit recipe ${recipe.name}`}
-                  >
-                    <Pencil size={12} />
-                    Edit
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
-                    style={{ backgroundColor: '#10B981', color: '#fff' }}
-                    onClick={() => onExecuteRecipe(recipe)}
-                    aria-label={`Execute recipe ${recipe.name}`}
-                  >
-                    <Play size={12} />
-                    Execute
-                  </button>
-                  <button
-                    className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
-                    style={{ color: '#EF4444' }}
-                    onClick={() => onDeleteRecipe({ recipeId: recipe.id })}
-                    aria-label={`Delete recipe ${recipe.name}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── GlobalSettings (main) ─────────────────────────────────────────
 
 const subSections = [
   { id: 'uom', label: 'Units of Measure' },
   { id: 'conversions', label: 'UoM Conversions' },
   { id: 'locations', label: 'Locations' },
-  { id: 'production', label: 'Production' },
 ];
 
-export default function GlobalSettings({ data, onUpdate, onOpenModal, onOpenRecipeBuilder, onExecuteRecipe, onDeleteRecipe }) {
+export default function GlobalSettings({ data, onUpdate, onOpenModal }) {
   const [activeSection, setActiveSection] = useState('uom');
 
   return (
@@ -449,7 +344,7 @@ export default function GlobalSettings({ data, onUpdate, onOpenModal, onOpenReci
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold" style={{ color: '#1E1B4B' }}>Global Settings</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>System-wide configuration for units, locations and production</p>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>System-wide configuration for units and locations</p>
         </div>
       </div>
 
@@ -482,14 +377,6 @@ export default function GlobalSettings({ data, onUpdate, onOpenModal, onOpenReci
           )}
           {activeSection === 'locations' && (
             <LocationsSection locations={data.locations} onUpdate={onUpdate} onOpenModal={onOpenModal} />
-          )}
-          {activeSection === 'production' && (
-            <ProductionSection
-              data={data}
-              onOpenRecipeBuilder={onOpenRecipeBuilder}
-              onExecuteRecipe={onExecuteRecipe}
-              onDeleteRecipe={onDeleteRecipe}
-            />
           )}
         </div>
       </div>

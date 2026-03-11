@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Settings, BarChart3 } from 'lucide-react';
+import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin } from 'lucide-react';
 import CatalogView from './CatalogView.jsx';
 import CatalogManager from './CatalogManager.jsx';
-import GlobalSettings from './GlobalSettings.jsx';
-import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal } from './Modals.jsx';
+import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
+import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 
 const INITIAL_DATA = {
@@ -11,7 +11,7 @@ const INITIAL_DATA = {
     {
       id: 'beverages',
       name: 'Beverages',
-      formFactors: ['12oz Can', '5 Gal Keg', '1L Bottle'],
+      formFactors: ['12oz Can', '5 Gal Keg', '1L Bottle', 'Bulk'],
       items: [
         {
           id: 'bw-001',
@@ -63,6 +63,12 @@ const INITIAL_DATA = {
             { id: 'wp-1', locationId: 'LOC-001', minStock: 100, maxStock: 1000, conditions: 'Ambient', reorderTrigger: 150 },
             { id: 'wp-2', locationId: 'LOC-002', minStock: 20, maxStock: 200, conditions: 'Refrigerated', reorderTrigger: 30 },
           ],
+          recipe: {
+            id: 'r-001',
+            name: 'Keg to Can Repack',
+            sources: [{ itemId: 'bw-001', formFactor: '5 Gal Keg', qty: 1 }],
+            output: { formFactor: '12oz Can', qty: 500 },
+          },
         },
         {
           id: 'oj-002',
@@ -71,6 +77,12 @@ const INITIAL_DATA = {
           defaultFormFactor: '1L Bottle',
           lots: [],
           warehousePolicies: [],
+          recipe: {
+            id: 'r-002',
+            name: 'OJ Bulk Split',
+            sources: [{ itemId: 'oj-002', formFactor: 'Bulk', qty: 1 }],
+            output: { formFactor: '1L Bottle', qty: 100 },
+          },
         },
       ],
       attributeSchemas: [
@@ -132,20 +144,6 @@ const INITIAL_DATA = {
     { id: 'c2', fromId: 'l', toId: 'fl-oz', factor: 33.814 },
     { id: 'c3', fromId: 'kg', toId: 'lb', factor: 2.205 },
   ],
-  recipes: [
-    {
-      id: 'r1',
-      name: 'Keg to Can Repack',
-      sources: [{ id: 'rs-1', itemId: 'bw-001', categoryId: 'beverages', formFactor: '5 Gal Keg', qty: 1 }],
-      destinations: [{ id: 'rd-1', itemId: 'bw-001', categoryId: 'beverages', formFactor: '12oz Can', qty: 500 }],
-    },
-    {
-      id: 'r2',
-      name: 'OJ Bulk Split',
-      sources: [{ id: 'rs-2', itemId: 'oj-002', categoryId: 'beverages', formFactor: '1L Bottle', qty: 100 }],
-      destinations: [{ id: 'rd-2', itemId: 'oj-002', categoryId: 'beverages', formFactor: '1L Bottle', qty: 100 }],
-    },
-  ],
 };
 
 function Toast({ toast, onDismiss }) {
@@ -190,7 +188,8 @@ export default function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('beverages');
   const [toast, setToast] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
-  const [recipeBuilderState, setRecipeBuilderState] = useState(null);
+  const [recipeBuilderState, setRecipeBuilderState] = useState(null); // { item, categoryId }
+  const [selectedLot, setSelectedLot] = useState(null);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -410,47 +409,72 @@ export default function App() {
     showToast('Conversion removed', 'success');
   }, [showToast]);
 
-  const handleSaveRecipe = useCallback((recipe) => {
-    setData(prev => {
-      const exists = prev.recipes.find(r => r.id === recipe.id);
-      return {
-        ...prev,
-        recipes: exists
-          ? prev.recipes.map(r => r.id === recipe.id ? recipe : r)
-          : [...prev.recipes, recipe],
-      };
-    });
-    showToast(recipe.id ? 'Recipe saved' : 'Recipe created', 'success');
-    setRecipeBuilderState(null);
-  }, [showToast]);
-
-  const handleDeleteRecipe = useCallback(({ recipeId }) => {
+  const handleSaveRecipe = useCallback((itemId, recipe) => {
     setData(prev => ({
       ...prev,
-      recipes: prev.recipes.filter(r => r.id !== recipeId),
+      categories: prev.categories.map(cat => ({
+        ...cat,
+        items: cat.items.map(item =>
+          item.id !== itemId ? item : { ...item, recipe }
+        ),
+      })),
+    }));
+    const itemName = (() => {
+      for (const cat of data.categories) {
+        const found = cat.items.find(i => i.id === itemId);
+        if (found) return found.name;
+      }
+      return itemId;
+    })();
+    showToast(`Recipe saved for ${itemName}`, 'success');
+    setRecipeBuilderState(null);
+    closeModal();
+  }, [showToast, closeModal, data.categories]);
+
+  const handleDeleteRecipe = useCallback((itemId) => {
+    setData(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat => ({
+        ...cat,
+        items: cat.items.map(item =>
+          item.id !== itemId ? item : { ...item, recipe: null }
+        ),
+      })),
     }));
     showToast('Recipe deleted', 'success');
   }, [showToast]);
 
-  const handleExecuteRecipe = useCallback(({ recipe, sourceLocationId, destLocationId, multiplier }) => {
-    // Update lot inventories based on execution
+  const handleExecuteRecipe = useCallback(({ categoryId, item, recipe, sourceLocationIds, destLocationId, multiplier, newBatchId, newLot }) => {
     setData(prev => {
-      let newData = { ...prev, categories: prev.categories.map(cat => ({ ...cat, items: cat.items.map(item => ({ ...item, lots: [...item.lots] })) })) };
+      let newData = { ...prev, categories: prev.categories.map(cat => ({ ...cat, items: cat.items.map(i => ({ ...i, lots: [...i.lots] })) })) };
 
-      recipe.sources.forEach(src => {
+      // Deduct source lots FIFO per source
+      recipe.sources.forEach((src, srcIndex) => {
         const consumeQty = src.qty * multiplier;
         let remaining = consumeQty;
+        const newBatchIdRef = newBatchId;
         newData.categories = newData.categories.map(cat =>
-          cat.id !== src.categoryId ? cat : {
+          cat.id !== categoryId ? cat : {
             ...cat,
-            items: cat.items.map(item =>
-              item.id !== src.itemId ? item : {
-                ...item,
-                lots: item.lots.map(lot => {
+            items: cat.items.map(i =>
+              i.id !== src.itemId ? i : {
+                ...i,
+                lots: i.lots.map(lot => {
                   if (remaining <= 0 || lot.formFactor !== src.formFactor) return lot;
                   const deduct = Math.min(lot.qty, remaining);
                   remaining -= deduct;
-                  return { ...lot, qty: lot.qty - deduct };
+                  const productionTxn = {
+                    id: `TXN-${Date.now()}-${srcIndex}`,
+                    type: 'production-use',
+                    timestamp: new Date().toISOString(),
+                    qtyChange: -deduct,
+                    reference: newBatchIdRef,
+                  };
+                  return {
+                    ...lot,
+                    qty: lot.qty - deduct,
+                    transactions: [...(lot.transactions || []), productionTxn],
+                  };
                 }),
               }
             ),
@@ -458,28 +482,22 @@ export default function App() {
         );
       });
 
-      recipe.destinations.forEach(dest => {
-        const addQty = dest.qty * multiplier;
-        const newLotId = `LOT-${Date.now().toString(36)}`;
-        newData.categories = newData.categories.map(cat =>
-          cat.id !== dest.categoryId ? cat : {
-            ...cat,
-            items: cat.items.map(item =>
-              item.id !== dest.itemId ? item : {
-                ...item,
-                lots: [
-                  ...item.lots,
-                  { id: newLotId, formFactor: dest.formFactor, qty: addQty, buyInPrice: 0, highlightNew: true },
-                ],
-              }
-            ),
-          }
-        );
-      });
+      // Add the new output lot
+      newData.categories = newData.categories.map(cat =>
+        cat.id !== categoryId ? cat : {
+          ...cat,
+          items: cat.items.map(i =>
+            i.id !== item.id ? i : {
+              ...i,
+              lots: [...i.lots, newLot],
+            }
+          ),
+        }
+      );
 
       return newData;
     });
-    showToast('Production run complete', 'success');
+    showToast(`Production complete. Lot ${newBatchId} created.`, 'success');
     closeModal();
   }, [showToast, closeModal]);
 
@@ -488,6 +506,8 @@ export default function App() {
   const catalogHandlers = {
     onCreateLot: (categoryId, item) => openModal('createLot', { categoryId, item }),
     onOpenModal: openModal,
+    onLotClick: (lot) => setSelectedLot(lot),
+    onProduceLot: (item) => openModal('produceLot', { categoryId: selectedCategoryId, item }),
   };
 
   const managerHandlers = {
@@ -514,9 +534,6 @@ export default function App() {
       deleteConversion: handleDeleteConversion,
     },
     onOpenModal: openModal,
-    onOpenRecipeBuilder: (recipe) => setRecipeBuilderState(recipe || { _new: true }),
-    onExecuteRecipe: (recipe) => openModal('executeRecipe', { recipe }),
-    onDeleteRecipe: handleDeleteRecipe,
   };
 
   const selectedCategory = data.categories.find(c => c.id === selectedCategoryId);
@@ -628,12 +645,24 @@ export default function App() {
         />
       );
     }
-    if (type === 'executeRecipe') {
+    if (type === 'editRecipe') {
+      return (
+        <RecipeBuilder
+          item={payload.item}
+          initialRecipe={payload.item.recipe}
+          data={data}
+          onSave={(recipe) => handleSaveRecipe(payload.item.id, recipe)}
+          onClose={closeModal}
+        />
+      );
+    }
+    if (type === 'produceLot') {
       return (
         <ExecutionModal
-          recipe={payload.recipe}
+          item={payload.item}
+          recipe={payload.item.recipe}
           data={data}
-          onExecute={handleExecuteRecipe}
+          onExecute={(execPayload) => handleExecuteRecipe({ ...execPayload, categoryId: payload.categoryId, item: payload.item })}
           onClose={closeModal}
         />
       );
@@ -643,21 +672,6 @@ export default function App() {
 
   // ── Render ─────────────────────────────────────────────────────
 
-  if (recipeBuilderState) {
-    const recipe = recipeBuilderState._new
-      ? { id: null, name: '', sources: [], destinations: [] }
-      : recipeBuilderState;
-    return (
-      <div className="h-full" style={{ backgroundColor: '#F5F3FF' }}>
-        <RecipeBuilder
-          recipe={recipe}
-          data={data}
-          onSave={handleSaveRecipe}
-          onClose={() => setRecipeBuilderState(null)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="h-full" style={{ backgroundColor: '#F5F3FF' }}>
@@ -687,7 +701,12 @@ export default function App() {
                 ? { backgroundColor: '#6366F1', color: '#fff', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }
                 : { backgroundColor: 'transparent', color: '#64748B' }
             }
-            onClick={() => setMode('catalog')}
+            onClick={() => {
+              setMode('catalog');
+              if (['__uom', '__conversions', '__locations'].includes(selectedCategoryId)) {
+                setSelectedCategoryId(data.categories[0]?.id ?? '');
+              }
+            }}
           >
             Catalog
           </button>
@@ -715,7 +734,7 @@ export default function App() {
             Categories
           </p>
           {sidebarCategories.map(cat => {
-            const isActive = selectedCategoryId === cat.id && (mode === 'catalog' || (mode === 'manager' && selectedCategoryId !== '__global'));
+            const isActive = selectedCategoryId === cat.id;
             return (
               <button
                 key={cat.id}
@@ -725,13 +744,7 @@ export default function App() {
                     ? { backgroundColor: '#EEF2FF', color: '#4F46E5', borderLeft: '3px solid #6366F1' }
                     : { color: '#1E1B4B', borderLeft: '3px solid transparent' }
                 }
-                onClick={() => {
-                  setSelectedCategoryId(cat.id);
-                  if (mode === 'catalog' && selectedCategoryId === '__global') {
-                    // nothing
-                  }
-                  if (selectedCategoryId === '__global') setSelectedCategoryId(cat.id);
-                }}
+                onClick={() => setSelectedCategoryId(cat.id)}
               >
                 <BarChart3 size={14} style={{ flexShrink: 0, color: isActive ? '#6366F1' : '#94A3B8' }} />
                 <span className="text-sm truncate">{cat.name}</span>
@@ -749,22 +762,35 @@ export default function App() {
           })}
         </div>
 
-        {mode === 'manager' && (
-          <div className="mt-auto px-3 pb-4 border-t border-slate-100 pt-3">
-            <button
-              className="w-full text-left px-3 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition-all duration-150"
-              style={
-                selectedCategoryId === '__global'
-                  ? { backgroundColor: '#EEF2FF', color: '#4F46E5', borderLeft: '3px solid #6366F1' }
-                  : { color: '#64748B', borderLeft: '3px solid transparent' }
-              }
-              onClick={() => setSelectedCategoryId('__global')}
-            >
-              <Settings size={14} style={{ flexShrink: 0, color: selectedCategoryId === '__global' ? '#6366F1' : '#94A3B8' }} />
-              <span className="text-sm">Global Settings</span>
-            </button>
-          </div>
-        )}
+        {mode === 'manager' && <div className="mx-3 border-t border-slate-100 my-2" />}
+
+        {mode === 'manager' && <div className="px-3 pb-4">
+          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#64748B' }}>
+            Configuration
+          </p>
+          {[
+            { id: '__uom', label: 'Units of Measure', Icon: Ruler },
+            { id: '__conversions', label: 'UoM Conversions', Icon: ArrowLeftRight },
+            { id: '__locations', label: 'Locations', Icon: MapPin },
+          ].map(({ id, label, Icon }) => {
+            const isActive = selectedCategoryId === id;
+            return (
+              <button
+                key={id}
+                className="w-full text-left px-3 py-2 rounded-lg mb-0.5 cursor-pointer flex items-center gap-2 transition-all duration-150"
+                style={
+                  isActive
+                    ? { backgroundColor: '#EEF2FF', color: '#4F46E5', borderLeft: '3px solid #6366F1' }
+                    : { color: '#1E1B4B', borderLeft: '3px solid transparent' }
+                }
+                onClick={() => setSelectedCategoryId(id)}
+              >
+                <Icon size={14} style={{ flexShrink: 0, color: isActive ? '#6366F1' : '#94A3B8' }} />
+                <span className="text-sm">{label}</span>
+              </button>
+            );
+          })}
+        </div>}
       </aside>
 
       {/* Main content */}
@@ -773,37 +799,67 @@ export default function App() {
         style={{ marginLeft: '240px' }}
       >
         <div className="p-6">
-          {mode === 'catalog' && selectedCategory && (
-            <CatalogView
-              data={data}
-              selectedCategoryId={selectedCategoryId}
-              onCreateLot={catalogHandlers.onCreateLot}
-              onOpenModal={catalogHandlers.onOpenModal}
-            />
-          )}
-          {mode === 'manager' && selectedCategoryId !== '__global' && selectedCategory && (
-            <CatalogManager
-              data={data}
-              selectedCategoryId={selectedCategoryId}
-              onUpdate={managerHandlers.onUpdate}
-              onOpenModal={managerHandlers.onOpenModal}
-            />
-          )}
-          {mode === 'manager' && selectedCategoryId === '__global' && (
-            <GlobalSettings
-              data={data}
-              onUpdate={globalHandlers.onUpdate}
-              onOpenModal={globalHandlers.onOpenModal}
-              onOpenRecipeBuilder={globalHandlers.onOpenRecipeBuilder}
-              onExecuteRecipe={globalHandlers.onExecuteRecipe}
-              onDeleteRecipe={globalHandlers.onDeleteRecipe}
-            />
-          )}
+          {(() => {
+            if (selectedCategoryId === '__uom') {
+              return <UomSection uom={data.uom} />;
+            }
+            if (selectedCategoryId === '__conversions') {
+              return (
+                <UomConversionsSection
+                  uom={data.uom}
+                  conversions={data.uomConversions}
+                  onUpdate={globalHandlers.onUpdate}
+                />
+              );
+            }
+            if (selectedCategoryId === '__locations') {
+              return (
+                <LocationsSection
+                  locations={data.locations}
+                  onUpdate={globalHandlers.onUpdate}
+                  onOpenModal={openModal}
+                />
+              );
+            }
+
+            if (mode === 'catalog' && selectedCategory) {
+              return (
+                <CatalogView
+                  data={data}
+                  selectedCategoryId={selectedCategoryId}
+                  onCreateLot={catalogHandlers.onCreateLot}
+                  onOpenModal={catalogHandlers.onOpenModal}
+                  onLotClick={catalogHandlers.onLotClick}
+                  onProduceLot={catalogHandlers.onProduceLot}
+                />
+              );
+            }
+            if (mode === 'manager' && selectedCategory) {
+              return (
+                <CatalogManager
+                  data={data}
+                  selectedCategoryId={selectedCategoryId}
+                  onUpdate={managerHandlers.onUpdate}
+                  onOpenModal={managerHandlers.onOpenModal}
+                />
+              );
+            }
+
+            return null;
+          })()}
         </div>
       </main>
 
       {/* Modals */}
       {renderModal()}
+
+      {/* Lot Transaction History Panel */}
+      {selectedLot && (
+        <LotTransactionHistoryModal
+          lot={selectedLot}
+          onClose={() => setSelectedLot(null)}
+        />
+      )}
 
       {/* Toast */}
       <Toast toast={toast} onDismiss={dismissToast} />

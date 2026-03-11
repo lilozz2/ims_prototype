@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, Package, Layers, Settings, BarChart3, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Layers, Settings, BarChart3, X, FlaskConical } from 'lucide-react';
 
 // ── Items Tab ─────────────────────────────────────────────────────
 
@@ -126,6 +126,15 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
                           aria-label={`Edit ${item.name}`}
                         >
                           <Pencil size={14} />
+                        </button>
+                        <button
+                          className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-indigo-50"
+                          style={{ color: item.recipe !== null && item.recipe !== undefined ? '#6366F1' : '#94A3B8' }}
+                          onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item })}
+                          aria-label={item.recipe ? `Edit recipe for ${item.name}` : `Add recipe for ${item.name}`}
+                          title={item.recipe ? 'Edit Recipe' : 'Add Recipe'}
+                        >
+                          <FlaskConical size={14} />
                         </button>
                         <button
                           className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
