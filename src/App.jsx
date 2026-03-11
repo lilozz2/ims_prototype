@@ -18,9 +18,46 @@ const INITIAL_DATA = {
           name: 'Sparkling Water',
           sku: 'BW-001',
           defaultFormFactor: '12oz Can',
-          lots: [
-            { id: 'B-2023-10', formFactor: '12oz Can', qty: 500, buyInPrice: 0.45, highlightNew: false },
-            { id: 'B-2023-11', formFactor: '5 Gal Keg', qty: 20, buyInPrice: 45.00, highlightNew: false },
+          /**
+         * lots[]: Array of lot objects.
+         * Each lot shape:
+         * {
+         *   id: string,
+         *   formFactor: string,
+         *   qty: number,            // current quantity (net sum of all transaction qtyChange values)
+         *   buyInPrice: number,
+         *   highlightNew: boolean,
+         *   transactions: Array<{
+         *     id: string,
+         *     type: "buy-in" | "production-use",
+         *     timestamp: string,    // ISO-8601
+         *     qtyChange: number,    // positive = inflow, negative = outflow
+         *     reference: string | null  // null for buy-in; output Batch ID for production-use
+         *   }>
+         * }
+         */
+        lots: [
+            {
+              id: 'B-2023-10',
+              formFactor: '12oz Can',
+              qty: 500,
+              buyInPrice: 0.45,
+              highlightNew: false,
+              transactions: [
+                { id: 'TXN-001', type: 'buy-in', timestamp: '2023-10-01T09:00:00', qtyChange: 500, reference: null },
+              ],
+            },
+            {
+              id: 'B-2023-11',
+              formFactor: '5 Gal Keg',
+              qty: 20,
+              buyInPrice: 45.00,
+              highlightNew: false,
+              transactions: [
+                { id: 'TXN-002', type: 'buy-in',         timestamp: '2023-10-05T08:30:00', qtyChange:  20, reference: null        },
+                { id: 'TXN-003', type: 'production-use', timestamp: '2023-10-12T14:15:00', qtyChange:  -1, reference: 'B-2023-10' },
+              ],
+            },
           ],
           warehousePolicies: [
             { id: 'wp-1', locationId: 'LOC-001', minStock: 100, maxStock: 1000, conditions: 'Ambient', reorderTrigger: 150 },
@@ -172,6 +209,13 @@ export default function App() {
   // ── Data mutators ──────────────────────────────────────────────
 
   const handleCreateLot = useCallback(({ categoryId, itemId, lot }) => {
+    const buyInTxn = {
+      id: `TXN-${Date.now()}`,
+      type: 'buy-in',
+      timestamp: new Date().toISOString(),
+      qtyChange: lot.qty,
+      reference: null,
+    };
     setData(prev => ({
       ...prev,
       categories: prev.categories.map(cat =>
@@ -180,7 +224,7 @@ export default function App() {
           items: cat.items.map(item =>
             item.id !== itemId ? item : {
               ...item,
-              lots: [...item.lots, { ...lot, highlightNew: true }],
+              lots: [...item.lots, { ...lot, highlightNew: true, transactions: [buyInTxn] }],
             }
           ),
         }
