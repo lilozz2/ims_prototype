@@ -30,6 +30,7 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
       <div className="flex items-center justify-between mb-4">
         <div />
         <button
+          data-tutorial="add-item-btn"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
           style={{ backgroundColor: '#6366F1', color: '#fff' }}
           onClick={() => onOpenModal('addItem', { categoryId: category.id })}
@@ -128,6 +129,7 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
                           <Pencil size={14} />
                         </button>
                         <button
+                          data-tutorial={item.id === 'coke-004' ? 'recipe-btn-coke' : undefined}
                           className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-indigo-50"
                           style={{ color: item.recipe !== null && item.recipe !== undefined ? '#6366F1' : '#94A3B8' }}
                           onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item })}
@@ -191,6 +193,7 @@ function FormFactorsTab({ category, onUpdate }) {
             <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No form factors defined</p>
             <p className="text-sm text-center mb-4">Form factors define the packaging types for items in this category.</p>
             <button
+              data-tutorial="add-formfactor-btn"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
               style={{ backgroundColor: '#6366F1', color: '#fff' }}
               onClick={() => setAdding(true)}
@@ -206,6 +209,7 @@ function FormFactorsTab({ category, onUpdate }) {
                 Form Factors ({category.formFactors.length})
               </p>
               <button
+                data-tutorial="add-formfactor-btn"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
                 style={{ backgroundColor: '#6366F1', color: '#fff' }}
                 onClick={() => setAdding(true)}
@@ -280,6 +284,7 @@ function AttributeSchemasTab({ category, onOpenModal }) {
       <div className="flex items-center justify-between mb-4">
         <div />
         <button
+          data-tutorial="add-schema-btn"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
           style={{ backgroundColor: '#6366F1', color: '#fff' }}
           onClick={() => onOpenModal('addSchema', { categoryId: category.id })}
@@ -485,8 +490,8 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
 
 // ── CatalogManager (main) ─────────────────────────────────────────
 
-export default function CatalogManager({ data, selectedCategoryId, onUpdate, onOpenModal }) {
-  const [activeTab, setActiveTab] = useState('items');
+export default function CatalogManager({ data, selectedCategoryId, onUpdate, onOpenModal, activeTab = 'items', onTabChange }) {
+  const setActiveTab = onTabChange ?? (() => {});
   const category = data.categories.find(c => c.id === selectedCategoryId);
 
   if (!category) return null;
@@ -529,6 +534,11 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
         {tabs.map(tab => (
           <button
             key={tab.id}
+            data-tutorial={
+              tab.id === 'items' ? 'tab-items' :
+              tab.id === 'formFactors' ? 'tab-formfactors' :
+              tab.id === 'schemas' ? 'tab-schemas' : undefined
+            }
             className="px-4 py-2.5 text-sm font-medium cursor-pointer border-b-2 transition-all duration-150 -mb-px"
             style={
               activeTab === tab.id

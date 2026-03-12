@@ -94,6 +94,7 @@ function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
             </button>
             {item.recipe && (
               <button
+                data-tutorial={item.id === 'coke-004' ? 'produce-btn-coke' : undefined}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-slate-50"
                 style={{ borderColor: '#94A3B8', color: '#475569', backgroundColor: 'transparent' }}
                 onClick={e => { e.stopPropagation(); onProduceLot(item); }}

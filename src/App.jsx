@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin } from 'lucide-react';
+import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogView from './CatalogView.jsx';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
 import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
+import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
 
 const INITIAL_DATA = {
   categories: [
@@ -83,6 +84,35 @@ const INITIAL_DATA = {
             sources: [{ itemId: 'oj-002', formFactor: 'Bulk', qty: 1 }],
             output: { formFactor: '1L Bottle', qty: 100 },
           },
+        },
+        {
+          id: 'bot-003',
+          name: 'Bottle',
+          sku: 'BOT-003',
+          defaultFormFactor: '1L Bottle',
+          lots: [
+            {
+              id: 'B-BOT-001',
+              formFactor: '1L Bottle',
+              qty: 2400,
+              buyInPrice: 0.12,
+              highlightNew: false,
+              transactions: [
+                { id: 'TXN-BOT-001', type: 'buy-in', timestamp: '2024-01-10T08:00:00', qtyChange: 2400, reference: null },
+              ],
+            },
+          ],
+          warehousePolicies: [],
+          recipe: null,
+        },
+        {
+          id: 'coke-004',
+          name: 'Coke',
+          sku: 'COKE-004',
+          defaultFormFactor: '1L Bottle',
+          lots: [],
+          warehousePolicies: [],
+          recipe: null,
         },
       ],
       attributeSchemas: [
@@ -190,12 +220,47 @@ export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [recipeBuilderState, setRecipeBuilderState] = useState(null); // { item, categoryId }
   const [selectedLot, setSelectedLot] = useState(null);
+  const [managerActiveTab, setManagerActiveTab] = useState('items');
+  const [tutorialStep, setTutorialStep] = useState(null); // null = inactive, 0+ = active step
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
+
+  // ── Tutorial step advancement ───────────────────────────────────
+  useEffect(() => {
+    if (tutorialStep === null || tutorialStep === 0) return;
+    const bev = data.categories.find(c => c.id === 'beverages');
+    const cokeItem = bev?.items.find(i => i.id === 'coke-004');
+    const advance = () => setTutorialStep(s => s + 1);
+    switch (tutorialStep) {
+      case 1:  if (mode === 'manager') advance(); break;
+      case 2:  if (mode === 'manager' && selectedCategoryId === 'beverages') advance(); break;
+      case 3:  if (managerActiveTab === 'formFactors' && selectedCategoryId === 'beverages') advance(); break;
+      case 4:  if (bev && bev.formFactors.length > 4) advance(); break;
+      case 5:  if (managerActiveTab === 'items' && selectedCategoryId === 'beverages') advance(); break;
+      case 6:  if (activeModal?.type === 'addItem') advance(); break;
+      case 7:  if (bev && bev.items.length > 4 && !activeModal) advance(); break;
+      case 8:  if (managerActiveTab === 'schemas') advance(); break;
+      case 9:  if (activeModal?.type === 'addSchema') advance(); break;
+      case 10: if (bev && bev.attributeSchemas.length > 3 && !activeModal) advance(); break;
+      case 11: if (managerActiveTab === 'items') advance(); break;
+      case 12: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 13: if (cokeItem?.recipe != null && !activeModal) advance(); break;
+      case 14: if (mode === 'catalog') advance(); break;
+      case 15: if (mode === 'catalog' && selectedCategoryId === 'beverages') advance(); break;
+      case 16: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
+      case 17: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
+      default: break;
+    }
+  }, [tutorialStep, mode, selectedCategoryId, managerActiveTab, activeModal, data]);
+
+  // Reset managerActiveTab when category changes
+  useEffect(() => {
+    setManagerActiveTab('items');
+  }, [selectedCategoryId]);
 
   const openModal = useCallback((type, payload = {}) => {
     setActiveModal({ type, payload });
@@ -695,6 +760,7 @@ export default function App() {
         {/* Mode toggle */}
         <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
           <button
+            data-tutorial="mode-catalog"
             className="px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-all duration-150"
             style={
               mode === 'catalog'
@@ -711,6 +777,7 @@ export default function App() {
             Catalog
           </button>
           <button
+            data-tutorial="mode-manager"
             className="px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-all duration-150"
             style={
               mode === 'manager'
@@ -720,6 +787,22 @@ export default function App() {
             onClick={() => setMode('manager')}
           >
             Catalog Manager
+          </button>
+        </div>
+
+        {/* Tutorial launcher */}
+        <div className="ml-auto">
+          <button
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 border"
+            style={
+              tutorialStep !== null
+                ? { backgroundColor: '#6366F1', color: '#fff', borderColor: '#6366F1' }
+                : { backgroundColor: 'transparent', color: '#64748B', borderColor: '#E2E8F0' }
+            }
+            onClick={() => setTutorialStep(tutorialStep !== null ? null : 0)}
+          >
+            <BookOpen size={13} />
+            {tutorialStep !== null ? 'Exit Tutorial' : 'Tutorial'}
           </button>
         </div>
       </header>
@@ -738,6 +821,7 @@ export default function App() {
             return (
               <button
                 key={cat.id}
+                data-tutorial={cat.id === 'beverages' ? 'sidebar-beverages' : undefined}
                 className="w-full text-left px-3 py-2 rounded-lg mb-0.5 cursor-pointer flex items-center gap-2 transition-all duration-150"
                 style={
                   isActive
@@ -841,6 +925,8 @@ export default function App() {
                   selectedCategoryId={selectedCategoryId}
                   onUpdate={managerHandlers.onUpdate}
                   onOpenModal={managerHandlers.onOpenModal}
+                  activeTab={managerActiveTab}
+                  onTabChange={setManagerActiveTab}
                 />
               );
             }
@@ -863,6 +949,15 @@ export default function App() {
 
       {/* Toast */}
       <Toast toast={toast} onDismiss={dismissToast} />
+
+      {/* Tutorial overlay */}
+      {tutorialStep !== null && (
+        <Tutorial
+          stepIndex={tutorialStep}
+          onNext={() => setTutorialStep(s => s + 1)}
+          onSkip={() => setTutorialStep(null)}
+        />
+      )}
     </div>
   );
 }
