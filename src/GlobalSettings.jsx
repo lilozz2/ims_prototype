@@ -3,20 +3,37 @@ import { Plus, Trash2, Pencil, Package, ArrowRight } from 'lucide-react';
 
 // ── Units of Measure ──────────────────────────────────────────────
 
-export function UomSection({ uom }) {
-  const grouped = uom.reduce((acc, u) => {
-    if (!acc[u.type]) acc[u.type] = [];
-    acc[u.type].push(u);
-    return acc;
-  }, {});
+export function UomSection({ uom, onUpdate }) {
+  const [adding, setAdding] = useState(false);
+  const [newUnit, setNewUnit] = useState({ name: '', symbol: '', type: 'volume' });
+
+  const handleSave = () => {
+    if (!newUnit.name || !newUnit.symbol) return;
+    const unit = { id: newUnit.symbol.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), ...newUnit };
+    onUpdate.addUom({ uom: unit });
+    setAdding(false);
+    setNewUnit({ name: '', symbol: '', type: 'volume' });
+  };
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Units of Measure</h2>
-        <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Available measurement units (read-only in this prototype)</p>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Units of Measure</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Define measurement units used across the system</p>
+        </div>
+        <button
+          data-tutorial="add-uom-btn"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+          style={{ backgroundColor: '#6366F1', color: '#fff' }}
+          onClick={() => setAdding(true)}
+        >
+          <Plus size={14} />
+          Add Unit
+        </button>
       </div>
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
@@ -46,11 +63,78 @@ export function UomSection({ uom }) {
                       {u.type}
                     </span>
                   </td>
+                  <td className="py-3 px-3 text-right">
+                      <button
+                        className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
+                        style={{ color: '#EF4444' }}
+                        onClick={() => onUpdate.deleteUom({ uomId: u.id })}
+                        aria-label="Delete unit"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {adding && (
+          <div className="p-4 border-b border-slate-200 bg-indigo-50">
+            <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#6366F1' }}>New Unit</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[140px]">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Name</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="e.g. Gram"
+                  value={newUnit.name}
+                  onChange={e => setNewUnit(p => ({ ...p, name: e.target.value }))}
+                />
+              </div>
+              <div className="w-28">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Symbol</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="e.g. g"
+                  value={newUnit.symbol}
+                  onChange={e => setNewUnit(p => ({ ...p, symbol: e.target.value }))}
+                />
+              </div>
+              <div className="w-32">
+                <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Type</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0' }}
+                  value={newUnit.type}
+                  onChange={e => setNewUnit(p => ({ ...p, type: e.target.value }))}
+                >
+                  <option value="volume">volume</option>
+                  <option value="weight">weight</option>
+                </select>
+              </div>
+              <div className="flex items-end gap-2 mt-5">
+                <button
+                  className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  onClick={handleSave}
+                >
+                  Save
+                </button>
+                <button
+                  className="px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 hover:bg-slate-100"
+                  style={{ color: '#64748B' }}
+                  onClick={() => { setAdding(false); setNewUnit({ name: '', symbol: '', type: 'volume' }); }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -239,6 +323,7 @@ export function LocationsSection({ locations, onUpdate, onOpenModal }) {
           <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>Warehouses and storage facilities</p>
         </div>
         <button
+          data-tutorial="add-location-btn"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
           style={{ backgroundColor: '#6366F1', color: '#fff' }}
           onClick={() => onOpenModal('addLocation', {})}

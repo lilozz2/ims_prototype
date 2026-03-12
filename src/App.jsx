@@ -176,7 +176,6 @@ const INITIAL_DATA = {
     { id: 'l', name: 'Litre', symbol: 'L', type: 'volume' },
     { id: 'gal', name: 'Gallon', symbol: 'gal', type: 'volume' },
     { id: 'kg', name: 'Kilogram', symbol: 'kg', type: 'weight' },
-    { id: 'g', name: 'Gram', symbol: 'g', type: 'weight' },
     { id: 'lb', name: 'Pound', symbol: 'lb', type: 'weight' },
   ],
   uomConversions: [
@@ -247,22 +246,27 @@ export default function App() {
     const advance = () => setTutorialStep(s => s + 1);
     switch (tutorialStep) {
       case 1:  if (mode === 'manager') advance(); break;
-      case 2:  if (mode === 'manager' && selectedCategoryId === 'beverages') advance(); break;
-      case 3:  if (managerActiveTab === 'formFactors' && selectedCategoryId === 'beverages') advance(); break;
-      case 4:  if (bev && bev.formFactors.length > 4) advance(); break;
-      case 5:  if (managerActiveTab === 'items' && selectedCategoryId === 'beverages') advance(); break;
-      case 6:  if (activeModal?.type === 'addItem') advance(); break;
-      case 7:  if (bev && bev.items.length > 4 && !activeModal) advance(); break;
-      case 8:  if (managerActiveTab === 'schemas') advance(); break;
-      case 9:  if (activeModal?.type === 'addSchema') advance(); break;
-      case 10: if (bev && bev.attributeSchemas.length > 3 && !activeModal) advance(); break;
-      case 11: if (managerActiveTab === 'items') advance(); break;
-      case 12: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 13: if (cokeItem?.recipe != null && !activeModal) advance(); break;
-      case 14: if (mode === 'catalog') advance(); break;
-      case 15: if (mode === 'catalog' && selectedCategoryId === 'beverages') advance(); break;
-      case 16: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
-      case 17: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
+      case 2:  if (selectedCategoryId === '__locations' && mode === 'manager') advance(); break;
+      case 3:  if (activeModal?.type === 'addLocation') advance(); break;
+      case 4:  if (data.locations.length > 3 && !activeModal) advance(); break;
+      case 5:  if (selectedCategoryId === '__uom' && mode === 'manager') advance(); break;
+      case 6:  if (data.uom.length > 6) advance(); break;
+      case 7:  if (mode === 'manager' && selectedCategoryId === 'beverages') advance(); break;
+      case 8:  if (managerActiveTab === 'formFactors' && selectedCategoryId === 'beverages') advance(); break;
+      case 9:  if (bev && bev.formFactors.length > 4) advance(); break;
+      case 10: if (managerActiveTab === 'items' && selectedCategoryId === 'beverages') advance(); break;
+      case 11: if (activeModal?.type === 'addItem') advance(); break;
+      case 12: if (bev && bev.items.length > 4 && !activeModal) advance(); break;
+      case 13: if (managerActiveTab === 'schemas') advance(); break;
+      case 14: if (activeModal?.type === 'addSchema') advance(); break;
+      case 15: if (bev && bev.attributeSchemas.length > 3 && !activeModal) advance(); break;
+      case 16: if (managerActiveTab === 'items') advance(); break;
+      case 17: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 18: if (cokeItem?.recipe != null && !activeModal) advance(); break;
+      case 19: if (mode === 'catalog') advance(); break;
+      case 20: if (mode === 'catalog' && selectedCategoryId === 'beverages') advance(); break;
+      case 21: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
+      case 22: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
       default: break;
     }
   }, [tutorialStep, mode, selectedCategoryId, managerActiveTab, activeModal, data]);
@@ -468,6 +472,20 @@ export default function App() {
     showToast('Location deleted', 'success');
   }, [showToast]);
 
+  const handleAddUom = useCallback(({ uom }) => {
+    setData(prev => ({ ...prev, uom: [...prev.uom, uom] }));
+    showToast('Unit of measure added', 'success');
+  }, [showToast]);
+
+  const handleDeleteUom = useCallback(({ uomId }) => {
+    setData(prev => ({
+      ...prev,
+      uom: prev.uom.filter(u => u.id !== uomId),
+      uomConversions: prev.uomConversions.filter(c => c.fromId !== uomId && c.toId !== uomId),
+    }));
+    showToast('Unit of measure deleted', 'success');
+  }, [showToast]);
+
   const handleAddConversion = useCallback(({ conversion }) => {
     setData(prev => ({
       ...prev,
@@ -602,6 +620,8 @@ export default function App() {
 
   const globalHandlers = {
     onUpdate: {
+      addUom: handleAddUom,
+      deleteUom: handleDeleteUom,
       addLocation: handleAddLocation,
       editLocation: handleEditLocation,
       deleteLocation: handleDeleteLocation,
@@ -863,14 +883,15 @@ export default function App() {
             Configuration
           </p>
           {[
-            { id: '__uom', label: 'Units of Measure', Icon: Ruler },
-            { id: '__conversions', label: 'UoM Conversions', Icon: ArrowLeftRight },
-            { id: '__locations', label: 'Locations', Icon: MapPin },
-          ].map(({ id, label, Icon }) => {
+            { id: '__uom',         label: 'Units of Measure', Icon: Ruler,          tutorialId: 'sidebar-uom'       },
+            { id: '__conversions', label: 'UoM Conversions',  Icon: ArrowLeftRight,  tutorialId: undefined           },
+            { id: '__locations',   label: 'Locations',         Icon: MapPin,          tutorialId: 'sidebar-locations' },
+          ].map(({ id, label, Icon, tutorialId }) => {
             const isActive = selectedCategoryId === id;
             return (
               <button
                 key={id}
+                data-tutorial={tutorialId || undefined}
                 className="w-full text-left px-3 py-2 rounded-lg mb-0.5 cursor-pointer flex items-center gap-2 transition-all duration-150"
                 style={
                   isActive
@@ -895,7 +916,7 @@ export default function App() {
         <div className="p-6">
           {(() => {
             if (selectedCategoryId === '__uom') {
-              return <UomSection uom={data.uom} />;
+              return <UomSection uom={data.uom} onUpdate={globalHandlers.onUpdate} />;
             }
             if (selectedCategoryId === '__conversions') {
               return (
