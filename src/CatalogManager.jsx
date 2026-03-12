@@ -161,27 +161,40 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
 
 // ── Form Factors Tab ──────────────────────────────────────────────
 
-function FormFactorsTab({ category, onUpdate }) {
+function FormFactorsTab({ category, uom, onUpdate }) {
   const [adding, setAdding] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [inputName, setInputName] = useState('');
+  const [inputQty, setInputQty] = useState('');
+  const [inputUomId, setInputUomId] = useState('');
+
+  const resetForm = () => { setInputName(''); setInputQty(''); setInputUomId(''); };
 
   const handleAdd = () => {
-    const trimmed = inputValue.trim();
+    const trimmed = inputName.trim();
     if (!trimmed) return;
-    if (category.formFactors.includes(trimmed)) return;
+    if (category.formFactors.some(f => f.name === trimmed)) return;
+    const parsedQty = parseFloat(inputQty);
     onUpdate.updateFormFactors({
       categoryId: category.id,
-      formFactors: [...category.formFactors, trimmed],
+      formFactors: [
+        ...category.formFactors,
+        { name: trimmed, quantity: inputQty !== '' && !isNaN(parsedQty) ? parsedQty : null, uomId: inputUomId || null },
+      ],
     });
-    setInputValue('');
+    resetForm();
     setAdding(false);
   };
 
   const handleRemove = (ff) => {
     onUpdate.updateFormFactors({
       categoryId: category.id,
-      formFactors: category.formFactors.filter(f => f !== ff),
+      formFactors: category.formFactors.filter(f => f.name !== ff.name),
     });
+  };
+
+  const getUomSymbol = (uomId) => {
+    const u = uom?.find(u => u.id === uomId);
+    return u ? u.symbol : uomId;
   };
 
   return (
@@ -221,15 +234,18 @@ function FormFactorsTab({ category, onUpdate }) {
             <div className="flex flex-wrap gap-2 mb-4">
               {category.formFactors.map(ff => (
                 <div
-                  key={ff}
+                  key={ff.name}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border"
                   style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', borderColor: '#C7D2FE' }}
                 >
-                  {ff}
+                  {ff.name}
+                  {ff.quantity != null && ff.uomId ? (
+                    <span className="text-xs opacity-60 ml-0.5">· {ff.quantity} {getUomSymbol(ff.uomId)}</span>
+                  ) : null}
                   <button
                     className="cursor-pointer hover:opacity-70 transition-opacity ml-0.5"
                     onClick={() => handleRemove(ff)}
-                    aria-label={`Remove ${ff} form factor`}
+                    aria-label={`Remove ${ff.name} form factor`}
                   >
                     <X size={12} />
                   </button>
@@ -237,31 +253,63 @@ function FormFactorsTab({ category, onUpdate }) {
               ))}
             </div>
             {adding && (
-              <div className="flex items-center gap-2 mt-2">
-                <input
-                  type="text"
-                  className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
-                  style={{ borderColor: '#6366F1', boxShadow: '0 0 0 2px rgba(99,102,241,0.15)' }}
-                  placeholder="e.g. 330ml Can"
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') { setAdding(false); setInputValue(''); } }}
-                  autoFocus
-                />
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
-                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
-                  onClick={handleAdd}
-                >
-                  Add
-                </button>
-                <button
-                  className="px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 hover:bg-slate-100"
-                  style={{ color: '#64748B' }}
-                  onClick={() => { setAdding(false); setInputValue(''); }}
-                >
-                  Cancel
-                </button>
+              <div className="flex flex-wrap items-end gap-2 mt-2 p-3 rounded-lg border border-dashed" style={{ borderColor: '#C7D2FE', backgroundColor: '#F5F3FF' }}>
+                <div className="flex-1 min-w-[140px]">
+                  <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Name *</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
+                    style={{ borderColor: '#6366F1', boxShadow: '0 0 0 2px rgba(99,102,241,0.15)' }}
+                    placeholder="e.g. 330ml Can"
+                    value={inputName}
+                    onChange={e => setInputName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') { setAdding(false); resetForm(); } }}
+                    autoFocus
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Qty</label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
+                    style={{ borderColor: '#E2E8F0' }}
+                    placeholder="e.g. 12"
+                    value={inputQty}
+                    onChange={e => setInputQty(e.target.value)}
+                    min="0"
+                    step="any"
+                  />
+                </div>
+                <div className="w-32">
+                  <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>UoM</label>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
+                    style={{ borderColor: '#E2E8F0' }}
+                    value={inputUomId}
+                    onChange={e => setInputUomId(e.target.value)}
+                  >
+                    <option value="">None</option>
+                    {uom?.map(u => (
+                      <option key={u.id} value={u.id}>{u.symbol} — {u.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
+                    style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                    onClick={handleAdd}
+                  >
+                    Add
+                  </button>
+                  <button
+                    className="px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 hover:bg-slate-100"
+                    style={{ color: '#64748B' }}
+                    onClick={() => { setAdding(false); resetForm(); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -556,7 +604,7 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
         <ItemsTab category={category} onUpdate={onUpdate} onOpenModal={onOpenModal} />
       )}
       {activeTab === 'formFactors' && (
-        <FormFactorsTab category={category} onUpdate={onUpdate} />
+        <FormFactorsTab category={category} uom={data.uom} onUpdate={onUpdate} />
       )}
       {activeTab === 'schemas' && (
         <AttributeSchemasTab category={category} onOpenModal={onOpenModal} />

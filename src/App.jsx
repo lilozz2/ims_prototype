@@ -12,7 +12,12 @@ const INITIAL_DATA = {
     {
       id: 'beverages',
       name: 'Beverages',
-      formFactors: ['12oz Can', '5 Gal Keg', '1L Bottle', 'Bulk'],
+      formFactors: [
+        { name: '12oz Can',  quantity: 12,   uomId: 'fl-oz' },
+        { name: '5 Gal Keg', quantity: 5,    uomId: 'gal'   },
+        { name: '1L Bottle', quantity: 1,    uomId: 'l'     },
+        { name: 'Bulk',      quantity: null, uomId: null     },
+      ],
       items: [
         {
           id: 'bw-001',
@@ -150,7 +155,12 @@ const INITIAL_DATA = {
     {
       id: 'apparel',
       name: 'Apparel',
-      formFactors: ['S', 'M', 'L', 'XL'],
+      formFactors: [
+        { name: 'S',  quantity: null, uomId: null },
+        { name: 'M',  quantity: null, uomId: null },
+        { name: 'L',  quantity: null, uomId: null },
+        { name: 'XL', quantity: null, uomId: null },
+      ],
       items: [],
       attributeSchemas: [],
     },

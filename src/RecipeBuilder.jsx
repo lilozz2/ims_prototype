@@ -96,7 +96,7 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
           >
             <option value="">Select form factor...</option>
             {selectedCategory?.formFactors.map(ff => (
-              <option key={ff} value={ff}>{ff}</option>
+              <option key={ff.name} value={ff.name}>{ff.name}</option>
             ))}
           </select>
         </div>
@@ -205,7 +205,7 @@ function DestNodePopover({ node, item, data, onSave, onClose }) {
           >
             <option value="">Select form factor...</option>
             {itemCategory?.formFactors.map(ff => (
-              <option key={ff} value={ff}>{ff}</option>
+              <option key={ff.name} value={ff.name}>{ff.name}</option>
             ))}
           </select>
         </div>

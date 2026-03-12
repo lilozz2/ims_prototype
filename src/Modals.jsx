@@ -293,7 +293,7 @@ export function CreateLotModal({ category, item, onSubmit, onClose }) {
         <SelectInput value={formFactor} onChange={e => setFormFactor(e.target.value)}>
           <option value="">Select form factor...</option>
           {category?.formFactors.map(ff => (
-            <option key={ff} value={ff}>{ff}</option>
+            <option key={ff.name} value={ff.name}>{ff.name}</option>
           ))}
         </SelectInput>
       </FormField>
@@ -470,7 +470,7 @@ export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
         <SelectInput value={defaultFormFactor} onChange={e => setDefaultFormFactor(e.target.value)}>
           <option value="">Select form factor...</option>
           {category?.formFactors.map(ff => (
-            <option key={ff} value={ff}>{ff}</option>
+            <option key={ff.name} value={ff.name}>{ff.name}</option>
           ))}
         </SelectInput>
       </FormField>
@@ -542,7 +542,7 @@ export function SchemaBuilderModal({ category, existingSchema, onSubmit, onClose
         <SelectInput value={formFactor} onChange={e => setFormFactor(e.target.value)}>
           <option value="">Select form factor...</option>
           {category?.formFactors.map(ff => (
-            <option key={ff} value={ff}>{ff}</option>
+            <option key={ff.name} value={ff.name}>{ff.name}</option>
           ))}
         </SelectInput>
       </FormField>

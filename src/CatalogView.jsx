@@ -286,15 +286,21 @@ export default function CatalogView({ data, selectedCategoryId, onCreateLot, onO
                 Available Form Factors
               </p>
               <div className="flex flex-wrap gap-2">
-                {category.formFactors.map(ff => (
-                  <span
-                    key={ff}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium border"
-                    style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', borderColor: '#C7D2FE' }}
-                  >
-                    {ff}
-                  </span>
-                ))}
+                {category.formFactors.map(ff => {
+                  const uomEntry = ff.uomId ? data.uom?.find(u => u.id === ff.uomId) : null;
+                  return (
+                    <span
+                      key={ff.name}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium border"
+                      style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', borderColor: '#C7D2FE' }}
+                    >
+                      {ff.name}
+                      {ff.quantity != null && uomEntry ? (
+                        <span className="text-xs opacity-60 ml-1">· {ff.quantity} {uomEntry.symbol}</span>
+                      ) : null}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
