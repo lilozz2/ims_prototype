@@ -243,6 +243,7 @@ export default function App() {
     if (tutorialStep === null || tutorialStep === 0) return;
     const bev = data.categories.find(c => c.id === 'beverages');
     const cokeItem = bev?.items.find(i => i.id === 'coke-004');
+    const cokePowderItem = bev?.items.find(i => i.sku === 'CP-001');
     const advance = () => setTutorialStep(s => s + 1);
     switch (tutorialStep) {
       case 1:  if (mode === 'manager') advance(); break;
@@ -265,8 +266,10 @@ export default function App() {
       case 18: if (cokeItem?.recipe != null && !activeModal) advance(); break;
       case 19: if (mode === 'catalog') advance(); break;
       case 20: if (mode === 'catalog' && selectedCategoryId === 'beverages') advance(); break;
-      case 21: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
-      case 22: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
+      case 21: if (activeModal?.type === 'createLot') advance(); break;
+      case 22: if ((cokePowderItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
+      case 23: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
+      case 24: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
       default: break;
     }
   }, [tutorialStep, mode, selectedCategoryId, managerActiveTab, activeModal, data]);

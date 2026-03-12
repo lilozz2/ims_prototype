@@ -84,6 +84,7 @@ function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
         <td className="py-3 px-3 text-right">
           <div className="flex items-center justify-end gap-2">
             <button
+              data-tutorial={item.sku === 'CP-001' ? 'create-lot-btn-coke-powder' : undefined}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
               style={{ borderColor: '#6366F1', color: '#6366F1', backgroundColor: 'transparent' }}
               onClick={e => { e.stopPropagation(); onCreateLot(item); }}
