@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, Package, Layers, Settings, BarChart3, X, FlaskConical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Layers, Settings, BarChart3, X, FlaskConical, ChevronDown, Layers2 } from 'lucide-react';
 
 // ── Items Tab ─────────────────────────────────────────────────────
 
-function ItemsTab({ category, onUpdate, onOpenModal }) {
+function ItemsTab({ category, uom, onUpdate, onOpenModal }) {
+  const getUomSymbol = (uomId) => {
+    const u = uom?.find(u => u.id === uomId);
+    return u ? u.symbol : uomId || '—';
+  };
   const [selected, setSelected] = useState([]);
 
   const toggleSelect = (id) => {
@@ -88,7 +92,10 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
                     SKU
                   </th>
                   <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>
-                    Default Form Factor
+                    UoM
+                  </th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>
+                    Form Factors
                   </th>
                   <th className="py-3 px-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>
                     Actions
@@ -116,7 +123,23 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-sm" style={{ color: '#64748B' }}>
-                      {item.defaultFormFactor || <span className="italic opacity-50">—</span>}
+                      {item.uomId ? (
+                        <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#F0FDF4', color: '#16A34A' }}>
+                          {getUomSymbol(item.uomId)}
+                        </span>
+                      ) : <span className="italic opacity-50">—</span>}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex flex-wrap gap-1">
+                        {(item.formFactors || []).length === 0
+                          ? <span className="text-sm italic opacity-50" style={{ color: '#64748B' }}>—</span>
+                          : (item.formFactors || []).map(ff => (
+                              <span key={ff} className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}>
+                                {ff}
+                              </span>
+                            ))
+                        }
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -137,6 +160,16 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
                           title={item.recipe ? 'Edit Recipe' : 'Add Recipe'}
                         >
                           <FlaskConical size={14} />
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors hover:bg-indigo-50"
+                          style={{ color: '#6366F1' }}
+                          onClick={() => onOpenModal('attachFormFactors', { categoryId: category.id, item })}
+                          aria-label={`Attach form factors for ${item.name}`}
+                          title="Form Factors"
+                        >
+                          <Layers2 size={13} />
+                          <span>FF</span>
                         </button>
                         <button
                           className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-red-50"
@@ -161,24 +194,21 @@ function ItemsTab({ category, onUpdate, onOpenModal }) {
 
 // ── Form Factors Tab ──────────────────────────────────────────────
 
-function FormFactorsTab({ category, uom, onUpdate }) {
+function FormFactorsTab({ category, onUpdate }) {
   const [adding, setAdding] = useState(false);
   const [inputName, setInputName] = useState('');
-  const [inputQty, setInputQty] = useState('');
-  const [inputUomId, setInputUomId] = useState('');
 
-  const resetForm = () => { setInputName(''); setInputQty(''); setInputUomId(''); };
+  const resetForm = () => { setInputName(''); };
 
   const handleAdd = () => {
     const trimmed = inputName.trim();
     if (!trimmed) return;
     if (category.formFactors.some(f => f.name === trimmed)) return;
-    const parsedQty = parseFloat(inputQty);
     onUpdate.updateFormFactors({
       categoryId: category.id,
       formFactors: [
         ...category.formFactors,
-        { name: trimmed, quantity: inputQty !== '' && !isNaN(parsedQty) ? parsedQty : null, uomId: inputUomId || null },
+        { name: trimmed },
       ],
     });
     resetForm();
@@ -190,11 +220,6 @@ function FormFactorsTab({ category, uom, onUpdate }) {
       categoryId: category.id,
       formFactors: category.formFactors.filter(f => f.name !== ff.name),
     });
-  };
-
-  const getUomSymbol = (uomId) => {
-    const u = uom?.find(u => u.id === uomId);
-    return u ? u.symbol : uomId;
   };
 
   return (
@@ -239,9 +264,6 @@ function FormFactorsTab({ category, uom, onUpdate }) {
                   style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', borderColor: '#C7D2FE' }}
                 >
                   {ff.name}
-                  {ff.quantity != null && ff.uomId ? (
-                    <span className="text-xs opacity-60 ml-0.5">· {ff.quantity} {getUomSymbol(ff.uomId)}</span>
-                  ) : null}
                   <button
                     className="cursor-pointer hover:opacity-70 transition-opacity ml-0.5"
                     onClick={() => handleRemove(ff)}
@@ -266,33 +288,6 @@ function FormFactorsTab({ category, uom, onUpdate }) {
                     onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') { setAdding(false); resetForm(); } }}
                     autoFocus
                   />
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Qty</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
-                    style={{ borderColor: '#E2E8F0' }}
-                    placeholder="e.g. 12"
-                    value={inputQty}
-                    onChange={e => setInputQty(e.target.value)}
-                    min="0"
-                    step="any"
-                  />
-                </div>
-                <div className="w-32">
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>UoM</label>
-                  <select
-                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 transition-all duration-150"
-                    style={{ borderColor: '#E2E8F0' }}
-                    value={inputUomId}
-                    onChange={e => setInputUomId(e.target.value)}
-                  >
-                    <option value="">None</option>
-                    {uom?.map(u => (
-                      <option key={u.id} value={u.id}>{u.symbol} — {u.name}</option>
-                    ))}
-                  </select>
                 </div>
                 <div className="flex items-end gap-2">
                   <button
@@ -536,6 +531,174 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
   );
 }
 
+// ── Item-Form-Factor Tab ──────────────────────────────────────────
+
+function FormFactorGroupRow({ item, ffName, category, onOpenModal }) {
+  const [expanded, setExpanded] = useState(true);
+  const ffLots = (item.lots || []).filter(lot => lot.formFactor === ffName);
+
+  return (
+    <div className="ml-6 rounded-lg border border-slate-200 overflow-hidden mb-2">
+      {/* Row header */}
+      <div
+        className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
+        style={{ backgroundColor: '#F8FAFC' }}
+        onClick={() => setExpanded(e => !e)}
+      >
+        <ChevronDown
+          size={14}
+          style={{
+            flexShrink: 0,
+            color: '#94A3B8',
+            transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+            transition: 'transform 150ms',
+          }}
+        />
+        <span
+          className="text-xs px-2 py-0.5 rounded font-medium"
+          style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}
+        >
+          {ffName}
+        </span>
+        <span
+          className="text-xs px-1.5 py-0.5 rounded-full"
+          style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
+        >
+          {ffLots.length} lot{ffLots.length !== 1 ? 's' : ''}
+        </span>
+        <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
+          <button
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#6366F1', color: '#fff' }}
+            onClick={() => onOpenModal('createLot', { categoryId: category.id, item, formFactor: ffName })}
+          >
+            <Plus size={11} />
+            Create Lot
+          </button>
+          {item.recipe && (
+            <button
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#10B981', color: '#fff' }}
+              onClick={() => onOpenModal('produceLot', { categoryId: category.id, item })}
+            >
+              Produce
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Lot rows */}
+      {expanded && (
+        <div>
+          {ffLots.length === 0 ? (
+            <div className="px-4 py-3 text-xs text-center border-t border-slate-100" style={{ color: '#94A3B8' }}>
+              No lots for this form factor
+            </div>
+          ) : (
+            ffLots.map(lot => (
+              <div
+                key={lot.id}
+                className="flex items-center gap-3 px-4 py-2.5 border-t border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                onClick={() => onOpenModal('lotHistory', { lot })}
+              >
+                <span className="text-xs font-mono" style={{ color: '#1E1B4B' }}>{lot.id}</span>
+                {lot.highlightNew && (
+                  <span
+                    className="text-xs px-1.5 py-0.5 rounded font-medium"
+                    style={{ backgroundColor: '#D1FAE5', color: '#059669' }}
+                  >
+                    New
+                  </span>
+                )}
+                <span className="text-xs ml-auto" style={{ color: '#64748B' }}>
+                  Qty: {(lot.qty || 0).toLocaleString()}
+                </span>
+                {lot.buyInPrice > 0 && (
+                  <span className="text-xs" style={{ color: '#94A3B8' }}>
+                    ${lot.buyInPrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
+  const uomList = data.uom || [];
+
+  const getUomSymbol = (uomId) => {
+    const u = uomList.find(u => u.id === uomId);
+    return u ? u.symbol : uomId || '—';
+  };
+
+  if (category.items.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-16 px-6" style={{ color: '#64748B' }}>
+        <Package size={40} className="mb-3 opacity-30" />
+        <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No items in this category</p>
+        <p className="text-sm text-center">Add items first using the Items tab.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {category.items.map(item => {
+        const totalLots = (item.lots || []).length;
+        return (
+          <div key={item.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {/* Item header */}
+            <div
+              className="flex items-center gap-3 px-4 py-3 border-b border-slate-100"
+              style={{ backgroundColor: '#FAFAFA' }}
+            >
+              <Package size={16} style={{ color: '#6366F1', flexShrink: 0 }} />
+              <span className="text-sm font-semibold" style={{ color: '#1E1B4B' }}>{item.name}</span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>
+                {item.sku}
+              </span>
+              {item.uomId && (
+                <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#F0FDF4', color: '#16A34A' }}>
+                  {getUomSymbol(item.uomId)}
+                </span>
+              )}
+              <span
+                className="ml-auto text-xs px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}
+              >
+                {totalLots} lot{totalLots !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Form factor groups */}
+            <div className="py-3">
+              {(!item.formFactors || item.formFactors.length === 0) ? (
+                <div className="px-4 py-2 text-xs italic" style={{ color: '#94A3B8' }}>
+                  No form factors attached — use the Items tab to attach form factors
+                </div>
+              ) : (
+                item.formFactors.map(ffName => (
+                  <FormFactorGroupRow
+                    key={ffName}
+                    item={item}
+                    ffName={ffName}
+                    category={category}
+                    onOpenModal={onOpenModal}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── CatalogManager (main) ─────────────────────────────────────────
 
 export default function CatalogManager({ data, selectedCategoryId, onUpdate, onOpenModal, activeTab = 'items', onTabChange }) {
@@ -547,6 +710,7 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
   const tabs = [
     { id: 'items', label: 'Items' },
     { id: 'formFactors', label: 'Form Factors' },
+    { id: 'itemFF', label: 'Items & Lots' },
     { id: 'schemas', label: 'Attribute Schemas' },
     { id: 'policies', label: 'Warehouse Policy' },
   ];
@@ -554,6 +718,7 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
   const tabLabels = {
     items: 'Items',
     formFactors: 'Form Factors',
+    itemFF: 'Items & Lots',
     schemas: 'Attribute Schemas',
     policies: 'Warehouse Policy',
   };
@@ -601,10 +766,13 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
       </div>
 
       {activeTab === 'items' && (
-        <ItemsTab category={category} onUpdate={onUpdate} onOpenModal={onOpenModal} />
+        <ItemsTab category={category} uom={data.uom} onUpdate={onUpdate} onOpenModal={onOpenModal} />
       )}
       {activeTab === 'formFactors' && (
-        <FormFactorsTab category={category} uom={data.uom} onUpdate={onUpdate} />
+        <FormFactorsTab category={category} onUpdate={onUpdate} />
+      )}
+      {activeTab === 'itemFF' && (
+        <ItemFormFactorTab category={category} data={data} onUpdate={onUpdate} onOpenModal={onOpenModal} />
       )}
       {activeTab === 'schemas' && (
         <AttributeSchemasTab category={category} onOpenModal={onOpenModal} />

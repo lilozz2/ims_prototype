@@ -214,8 +214,8 @@ function ShimmerField() {
 
 // ── CreateLotModal ────────────────────────────────────────────────
 
-export function CreateLotModal({ category, item, onSubmit, onClose }) {
-  const [formFactor, setFormFactor] = useState(item?.defaultFormFactor || '');
+export function CreateLotModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
+  const [formFactor, setFormFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
   const [attrValues, setAttrValues] = useState({});
@@ -289,11 +289,18 @@ export function CreateLotModal({ category, item, onSubmit, onClose }) {
         <ReadOnlyField value={item?.sku} />
       </FormField>
 
+      <FormField label="Unit of Measure">
+        <ReadOnlyField value={uomLabel || '—'} />
+      </FormField>
+
       <FormField label="Form Factor" required>
         <SelectInput value={formFactor} onChange={e => setFormFactor(e.target.value)}>
           <option value="">Select form factor...</option>
-          {category?.formFactors.map(ff => (
-            <option key={ff.name} value={ff.name}>{ff.name}</option>
+          {(item?.formFactors && item.formFactors.length > 0
+            ? item.formFactors
+            : (category?.formFactors || []).map(ff => ff.name)
+          ).map(ffName => (
+            <option key={ffName} value={ffName}>{ffName}</option>
           ))}
         </SelectInput>
       </FormField>
@@ -438,6 +445,8 @@ export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
             id: 'item-' + Date.now().toString(36),
             name: name.trim(),
             sku: sku.trim(),
+            uomId: '',
+            formFactors: [],
             defaultFormFactor,
             lots: [],
             warehousePolicies: [],
@@ -1003,6 +1012,85 @@ export function LotTransactionHistoryModal({ lot, onClose }) {
         </div>
       </div>
     </>
+  );
+}
+
+// ── AttachFormFactorsModal ────────────────────────────────────────
+
+export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
+  const [selected, setSelected] = useState(item?.formFactors || []);
+  const [submitting, setSubmitting] = useState(false);
+
+  const toggle = (ffName) => {
+    setSelected(prev =>
+      prev.includes(ffName) ? prev.filter(n => n !== ffName) : [...prev, ffName]
+    );
+  };
+
+  const handleSubmit = () => {
+    setSubmitting(true);
+    setTimeout(() => {
+      const newDefaultFF = selected.includes(item?.defaultFormFactor)
+        ? item.defaultFormFactor
+        : (selected[0] || '');
+      onSubmit({ ...item, formFactors: selected, defaultFormFactor: newDefaultFF });
+      setSubmitting(false);
+    }, 200);
+  };
+
+  return (
+    <ModalShell title={`Form Factors — ${item?.name}`} onClose={onClose}>
+      <p className="text-sm mb-4" style={{ color: '#64748B' }}>
+        Select which form factors this item ships in.
+      </p>
+
+      {(category?.formFactors || []).length === 0 ? (
+        <div
+          className="rounded-lg px-4 py-3 text-sm"
+          style={{ backgroundColor: '#FEF9C3', color: '#854D0E' }}
+        >
+          No form factors defined for this category. Add form factors in the Form Factors tab first.
+        </div>
+      ) : (
+        <div className="space-y-2 mb-4">
+          {category.formFactors.map(ff => (
+            <label
+              key={ff.name}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
+              style={{
+                borderColor: selected.includes(ff.name) ? '#6366F1' : '#E2E8F0',
+                backgroundColor: selected.includes(ff.name) ? '#EEF2FF' : '#fff',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(ff.name)}
+                onChange={() => toggle(ff.name)}
+                style={{ accentColor: '#6366F1' }}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <span className="text-sm font-medium" style={{ color: '#1E1B4B' }}>{ff.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {item?.defaultFormFactor && !selected.includes(item.defaultFormFactor) && (
+        <div
+          className="rounded-lg px-3 py-2 text-xs mb-4"
+          style={{ backgroundColor: '#FEF9C3', color: '#854D0E' }}
+        >
+          The current default form factor "{item.defaultFormFactor}" is deselected — it will be replaced with the first selected form factor.
+        </div>
+      )}
+
+      <SubmitButton
+        loading={submitting}
+        onClick={handleSubmit}
+      >
+        Save Form Factors
+      </SubmitButton>
+    </ModalShell>
   );
 }
 

@@ -1,120 +1,70 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
-import CatalogView from './CatalogView.jsx';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
-import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal } from './Modals.jsx';
+import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
 
 const INITIAL_DATA = {
   categories: [
     {
-      id: 'beverages',
-      name: 'Beverages',
+      id: 'ingredients',
+      name: 'Ingredients',
       formFactors: [
-        { name: '12oz Can',  quantity: 12,   uomId: 'fl-oz' },
-        { name: '5 Gal Keg', quantity: 5,    uomId: 'gal'   },
-        { name: '1L Bottle', quantity: 1,    uomId: 'l'     },
-        { name: 'Bulk',      quantity: null, uomId: null     },
+        { name: '2.5kg bag' },
+        { name: '200L drum' },
+        { name: '1L bottle' },
+        { name: '5L Jerry can' },
       ],
       items: [
         {
-          id: 'bw-001',
-          name: 'Sparkling Water',
-          sku: 'BW-001',
-          defaultFormFactor: '12oz Can',
+          id: 'powder-001',
+          name: 'powder',
+          sku: 'PWD-001',
+          uomId: 'kg',
+          formFactors: ['2.5kg bag'],
+          defaultFormFactor: '2.5kg bag',
           /**
-         * lots[]: Array of lot objects.
-         * Each lot shape:
-         * {
-         *   id: string,
-         *   formFactor: string,
-         *   qty: number,            // current quantity (net sum of all transaction qtyChange values)
-         *   buyInPrice: number,
-         *   highlightNew: boolean,
-         *   transactions: Array<{
-         *     id: string,
-         *     type: "buy-in" | "production-use",
-         *     timestamp: string,    // ISO-8601
-         *     qtyChange: number,    // positive = inflow, negative = outflow
-         *     reference: string | null  // null for buy-in; output Batch ID for production-use
-         *   }>
-         * }
-         */
-        lots: [
-            {
-              id: 'B-2023-10',
-              formFactor: '12oz Can',
-              qty: 500,
-              buyInPrice: 0.45,
-              highlightNew: false,
-              transactions: [
-                { id: 'TXN-001', type: 'buy-in', timestamp: '2023-10-01T09:00:00', qtyChange: 500, reference: null },
-              ],
-            },
-            {
-              id: 'B-2023-11',
-              formFactor: '5 Gal Keg',
-              qty: 20,
-              buyInPrice: 45.00,
-              highlightNew: false,
-              transactions: [
-                { id: 'TXN-002', type: 'buy-in',         timestamp: '2023-10-05T08:30:00', qtyChange:  20, reference: null        },
-                { id: 'TXN-003', type: 'production-use', timestamp: '2023-10-12T14:15:00', qtyChange:  -1, reference: 'B-2023-10' },
-              ],
-            },
-          ],
-          warehousePolicies: [
-            { id: 'wp-1', locationId: 'LOC-001', minStock: 100, maxStock: 1000, conditions: 'Ambient', reorderTrigger: 150 },
-            { id: 'wp-2', locationId: 'LOC-002', minStock: 20, maxStock: 200, conditions: 'Refrigerated', reorderTrigger: 30 },
-          ],
-          recipe: {
-            id: 'r-001',
-            name: 'Keg to Can Repack',
-            sources: [{ itemId: 'bw-001', formFactor: '5 Gal Keg', qty: 1 }],
-            output: { formFactor: '12oz Can', qty: 500 },
-          },
-        },
-        {
-          id: 'oj-002',
-          name: 'Orange Juice',
-          sku: 'OJ-002',
-          defaultFormFactor: '1L Bottle',
+           * lots[]: Array of lot objects.
+           * Each lot shape:
+           * {
+           *   id: string,
+           *   formFactor: string,
+           *   qty: number,            // current quantity (net sum of all transaction qtyChange values)
+           *   buyInPrice: number,
+           *   highlightNew: boolean,
+           *   transactions: Array<{
+           *     id: string,
+           *     type: "buy-in" | "production-use",
+           *     timestamp: string,    // ISO-8601
+           *     qtyChange: number,    // positive = inflow, negative = outflow
+           *     reference: string | null  // null for buy-in; output Batch ID for production-use
+           *   }>
+           * }
+           */
           lots: [],
-          warehousePolicies: [],
-          recipe: {
-            id: 'r-002',
-            name: 'OJ Bulk Split',
-            sources: [{ itemId: 'oj-002', formFactor: 'Bulk', qty: 1 }],
-            output: { formFactor: '1L Bottle', qty: 100 },
-          },
-        },
-        {
-          id: 'bot-003',
-          name: 'Bottle',
-          sku: 'BOT-003',
-          defaultFormFactor: '1L Bottle',
-          lots: [
-            {
-              id: 'B-BOT-001',
-              formFactor: '1L Bottle',
-              qty: 2400,
-              buyInPrice: 0.12,
-              highlightNew: false,
-              transactions: [
-                { id: 'TXN-BOT-001', type: 'buy-in', timestamp: '2024-01-10T08:00:00', qtyChange: 2400, reference: null },
-              ],
-            },
-          ],
           warehousePolicies: [],
           recipe: null,
         },
         {
-          id: 'coke-004',
-          name: 'Coke',
-          sku: 'COKE-004',
-          defaultFormFactor: '1L Bottle',
+          id: 'solvent-001',
+          name: 'solvent',
+          sku: 'SLV-001',
+          uomId: 'l',
+          formFactors: ['200L drum'],
+          defaultFormFactor: '200L drum',
+          lots: [],
+          warehousePolicies: [],
+          recipe: null,
+        },
+        {
+          id: 'marker-001',
+          name: 'marker solution',
+          sku: 'MKR-001',
+          uomId: 'l',
+          formFactors: ['200L drum', '1L bottle', '5L Jerry can'],
+          defaultFormFactor: '200L drum',
           lots: [],
           warehousePolicies: [],
           recipe: null,
@@ -123,66 +73,72 @@ const INITIAL_DATA = {
       attributeSchemas: [
         {
           id: 'as-1',
-          itemId: 'bw-001',
-          formFactor: '12oz Can',
+          itemId: 'powder-001',
+          formFactor: '2.5kg bag',
           fields: [
-            { name: 'Carbonation Level', type: 'number', required: true },
-            { name: 'Expiry Date', type: 'date', required: true },
+            { name: 'Manufacturing date', type: 'date',   required: true },
+            { name: 'Production batch',   type: 'number', required: true },
+            { name: 'Bag No.',            type: 'number', required: true },
           ],
         },
         {
           id: 'as-2',
-          itemId: 'bw-001',
-          formFactor: '5 Gal Keg',
+          itemId: 'solvent-001',
+          formFactor: '200L drum',
           fields: [
-            { name: 'Pressure PSI', type: 'number', required: true },
-            { name: 'Fill Volume', type: 'number', required: true },
-            { name: 'Expiry Date', type: 'date', required: true },
+            { name: 'Manufacturing date', type: 'date', required: true },
           ],
         },
         {
-          id: 'as-3',
-          itemId: 'oj-002',
-          formFactor: '1L Bottle',
+          id: 'as-4',
+          itemId: 'marker-001',
+          formFactor: '200L drum',
           fields: [
-            { name: 'Pulp Level', type: 'text', required: false },
-            { name: 'Pasteurized', type: 'boolean', required: true },
-            { name: 'Expiry Date', type: 'date', required: true },
+            { name: 'Manufacturing date', type: 'date',   required: true },
+            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'Drum No.',           type: 'number', required: true },
+          ],
+        },
+        {
+          id: 'as-5',
+          itemId: 'marker-001',
+          formFactor: '1L bottle',
+          fields: [
+            { name: 'Manufacturing date', type: 'date',   required: true },
+            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'Drum No.',           type: 'number', required: true },
+          ],
+        },
+        {
+          id: 'as-6',
+          itemId: 'marker-001',
+          formFactor: '5L Jerry can',
+          fields: [
+            { name: 'Manufacturing date', type: 'date',   required: true },
+            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'Drum No.',           type: 'number', required: true },
           ],
         },
       ],
     },
     {
-      id: 'apparel',
-      name: 'Apparel',
-      formFactors: [
-        { name: 'S',  quantity: null, uomId: null },
-        { name: 'M',  quantity: null, uomId: null },
-        { name: 'L',  quantity: null, uomId: null },
-        { name: 'XL', quantity: null, uomId: null },
-      ],
+      id: 'misc',
+      name: 'Misc',
+      formFactors: [],
       items: [],
       attributeSchemas: [],
     },
   ],
   locations: [
-    { id: 'LOC-001', name: 'Warehouse A', type: 'Warehouse', capacity: 10000 },
-    { id: 'LOC-002', name: 'Cold Storage B', type: 'Cold Storage', capacity: 2000 },
-    { id: 'LOC-003', name: 'Distribution Hub', type: 'Distribution Centre', capacity: 5000 },
+    { id: 'LOC-001', name: 'SG Warehouse', type: 'Warehouse', capacity: 10000 },
+    { id: 'LOC-002', name: 'Ushkun Warehouse', type: 'Warehouse', capacity: 2000 },
+    { id: 'LOC-003', name: 'Satellite Warehouse', type: 'Warehouse', capacity: 5000 },
   ],
   uom: [
-    { id: 'fl-oz', name: 'Fluid Ounce', symbol: 'fl oz', type: 'volume' },
-    { id: 'ml', name: 'Millilitre', symbol: 'ml', type: 'volume' },
-    { id: 'l', name: 'Litre', symbol: 'L', type: 'volume' },
-    { id: 'gal', name: 'Gallon', symbol: 'gal', type: 'volume' },
     { id: 'kg', name: 'Kilogram', symbol: 'kg', type: 'weight' },
-    { id: 'lb', name: 'Pound', symbol: 'lb', type: 'weight' },
+    { id: 'l',  name: 'Litre',    symbol: 'L',  type: 'volume' },
   ],
-  uomConversions: [
-    { id: 'c1', fromId: 'gal', toId: 'fl-oz', factor: 128 },
-    { id: 'c2', fromId: 'l', toId: 'fl-oz', factor: 33.814 },
-    { id: 'c3', fromId: 'kg', toId: 'lb', factor: 2.205 },
-  ],
+  uomConversions: [],
 };
 
 function Toast({ toast, onDismiss }) {
@@ -222,13 +178,11 @@ function Toast({ toast, onDismiss }) {
 }
 
 export default function App() {
-  const [mode, setMode] = useState('catalog');
   const [data, setData] = useState(INITIAL_DATA);
-  const [selectedCategoryId, setSelectedCategoryId] = useState('beverages');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('ingredients');
   const [toast, setToast] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [recipeBuilderState, setRecipeBuilderState] = useState(null); // { item, categoryId }
-  const [selectedLot, setSelectedLot] = useState(null);
   const [managerActiveTab, setManagerActiveTab] = useState('items');
   const [tutorialStep, setTutorialStep] = useState(null); // null = inactive, 0+ = active step
 
@@ -246,13 +200,13 @@ export default function App() {
     const cokePowderItem = bev?.items.find(i => i.sku === 'CP-001');
     const advance = () => setTutorialStep(s => s + 1);
     switch (tutorialStep) {
-      case 1:  if (mode === 'manager') advance(); break;
-      case 2:  if (selectedCategoryId === '__locations' && mode === 'manager') advance(); break;
+      case 1:  advance(); break;
+      case 2:  if (selectedCategoryId === '__locations') advance(); break;
       case 3:  if (activeModal?.type === 'addLocation') advance(); break;
       case 4:  if (data.locations.length > 3 && !activeModal) advance(); break;
-      case 5:  if (selectedCategoryId === '__uom' && mode === 'manager') advance(); break;
+      case 5:  if (selectedCategoryId === '__uom') advance(); break;
       case 6:  if (data.uom.length > 6) advance(); break;
-      case 7:  if (mode === 'manager' && selectedCategoryId === 'beverages') advance(); break;
+      case 7:  if (selectedCategoryId === 'beverages') advance(); break;
       case 8:  if (managerActiveTab === 'formFactors' && selectedCategoryId === 'beverages') advance(); break;
       case 9:  if (bev && bev.formFactors.length > 4) advance(); break;
       case 10: if (managerActiveTab === 'items' && selectedCategoryId === 'beverages') advance(); break;
@@ -264,15 +218,13 @@ export default function App() {
       case 16: if (managerActiveTab === 'items') advance(); break;
       case 17: if (activeModal?.type === 'editRecipe') advance(); break;
       case 18: if (cokeItem?.recipe != null && !activeModal) advance(); break;
-      case 19: if (mode === 'catalog') advance(); break;
-      case 20: if (mode === 'catalog' && selectedCategoryId === 'beverages') advance(); break;
       case 21: if (activeModal?.type === 'createLot') advance(); break;
       case 22: if ((cokePowderItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
       case 23: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
       case 24: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
       default: break;
     }
-  }, [tutorialStep, mode, selectedCategoryId, managerActiveTab, activeModal, data]);
+  }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
 
   // Reset managerActiveTab when category changes
   useEffect(() => {
@@ -599,13 +551,6 @@ export default function App() {
 
   // ── Callbacks passed down ──────────────────────────────────────
 
-  const catalogHandlers = {
-    onCreateLot: (categoryId, item) => openModal('createLot', { categoryId, item }),
-    onOpenModal: openModal,
-    onLotClick: (lot) => setSelectedLot(lot),
-    onProduceLot: (item) => openModal('produceLot', { categoryId: selectedCategoryId, item }),
-  };
-
   const managerHandlers = {
     onUpdate: {
       addItem: handleAddItem,
@@ -648,10 +593,14 @@ export default function App() {
 
     if (type === 'createLot') {
       const category = data.categories.find(c => c.id === payload.categoryId);
+      const uomEntry = data.uom.find(u => u.id === payload.item?.uomId);
+      const uomLabel = uomEntry ? `${uomEntry.name} (${uomEntry.symbol})` : '—';
       return (
         <CreateLotModal
           category={category}
           item={payload.item}
+          preselectedFormFactor={payload.formFactor || ''}
+          uomLabel={uomLabel}
           onSubmit={(lot) => handleCreateLot({ categoryId: payload.categoryId, itemId: payload.item.id, lot })}
           onClose={closeModal}
         />
@@ -765,6 +714,25 @@ export default function App() {
         />
       );
     }
+    if (type === 'attachFormFactors') {
+      const category = data.categories.find(c => c.id === payload.categoryId);
+      return (
+        <AttachFormFactorsModal
+          category={category}
+          item={payload.item}
+          onSubmit={(updatedItem) => handleEditItem({ categoryId: payload.categoryId, item: updatedItem })}
+          onClose={closeModal}
+        />
+      );
+    }
+    if (type === 'lotHistory') {
+      return (
+        <LotTransactionHistoryModal
+          lot={payload.lot}
+          onClose={closeModal}
+        />
+      );
+    }
     return null;
   }
 
@@ -788,39 +756,6 @@ export default function App() {
           <span className="font-semibold text-base" style={{ color: '#1E1B4B' }}>
             Nanolumi IMS
           </span>
-        </div>
-
-        {/* Mode toggle */}
-        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-          <button
-            data-tutorial="mode-catalog"
-            className="px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-all duration-150"
-            style={
-              mode === 'catalog'
-                ? { backgroundColor: '#6366F1', color: '#fff', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }
-                : { backgroundColor: 'transparent', color: '#64748B' }
-            }
-            onClick={() => {
-              setMode('catalog');
-              if (['__uom', '__conversions', '__locations'].includes(selectedCategoryId)) {
-                setSelectedCategoryId(data.categories[0]?.id ?? '');
-              }
-            }}
-          >
-            Catalog
-          </button>
-          <button
-            data-tutorial="mode-manager"
-            className="px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-all duration-150"
-            style={
-              mode === 'manager'
-                ? { backgroundColor: '#6366F1', color: '#fff', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }
-                : { backgroundColor: 'transparent', color: '#64748B' }
-            }
-            onClick={() => setMode('manager')}
-          >
-            Catalog Manager
-          </button>
         </div>
 
         {/* Tutorial launcher */}
@@ -879,9 +814,9 @@ export default function App() {
           })}
         </div>
 
-        {mode === 'manager' && <div className="mx-3 border-t border-slate-100 my-2" />}
+        <div className="mx-3 border-t border-slate-100 my-2" />
 
-        {mode === 'manager' && <div className="px-3 pb-4">
+        <div className="px-3 pb-4">
           <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#64748B' }}>
             Configuration
           </p>
@@ -908,7 +843,7 @@ export default function App() {
               </button>
             );
           })}
-        </div>}
+        </div>
       </aside>
 
       {/* Main content */}
@@ -940,19 +875,7 @@ export default function App() {
               );
             }
 
-            if (mode === 'catalog' && selectedCategory) {
-              return (
-                <CatalogView
-                  data={data}
-                  selectedCategoryId={selectedCategoryId}
-                  onCreateLot={catalogHandlers.onCreateLot}
-                  onOpenModal={catalogHandlers.onOpenModal}
-                  onLotClick={catalogHandlers.onLotClick}
-                  onProduceLot={catalogHandlers.onProduceLot}
-                />
-              );
-            }
-            if (mode === 'manager' && selectedCategory) {
+            if (selectedCategory) {
               return (
                 <CatalogManager
                   data={data}
@@ -972,14 +895,6 @@ export default function App() {
 
       {/* Modals */}
       {renderModal()}
-
-      {/* Lot Transaction History Panel */}
-      {selectedLot && (
-        <LotTransactionHistoryModal
-          lot={selectedLot}
-          onClose={() => setSelectedLot(null)}
-        />
-      )}
 
       {/* Toast */}
       <Toast toast={toast} onDismiss={dismissToast} />
