@@ -570,10 +570,10 @@ function FormFactorGroupRow({ item, ffName, category, onOpenModal }) {
           <button
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
             style={{ backgroundColor: '#6366F1', color: '#fff' }}
-            onClick={() => onOpenModal('createLot', { categoryId: category.id, item, formFactor: ffName })}
+            onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
           >
             <Plus size={11} />
-            Create Lot
+            Create Lots
           </button>
           {item.recipe && (
             <button

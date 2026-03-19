@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
-import { CreateLotModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
+import { CreateLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
 
@@ -43,7 +43,63 @@ const INITIAL_DATA = {
            *   }>
            * }
            */
-          lots: [],
+          lots: [
+            {
+              id: 'B-PWD-2401',
+              formFactor: '2.5kg bag',
+              qty: 50,
+              buyInPrice: 12.50,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-PWD-2401-001',
+                  type: 'buy-in',
+                  timestamp: '2025-01-15T09:00:00.000Z',
+                  qtyChange: 50,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-PWD-2402',
+              formFactor: '2.5kg bag',
+              qty: 25,
+              buyInPrice: 12.80,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-PWD-2402-001',
+                  type: 'buy-in',
+                  timestamp: '2025-02-10T09:00:00.000Z',
+                  qtyChange: 37.5,
+                  reference: null,
+                },
+                {
+                  id: 'TXN-PWD-2402-002',
+                  type: 'production-use',
+                  timestamp: '2025-02-20T14:00:00.000Z',
+                  qtyChange: -12.5,
+                  reference: 'PROD-001',
+                },
+              ],
+            },
+            {
+              id: 'B-PWD-2403',
+              formFactor: '2.5kg bag',
+              qty: 12.5,
+              buyInPrice: 13.00,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-PWD-2403-001',
+                  type: 'buy-in',
+                  timestamp: '2025-03-10T09:00:00.000Z',
+                  qtyChange: 12.5,
+                  reference: null,
+                },
+              ],
+            },
+          ],
           warehousePolicies: [],
           recipe: null,
         },
@@ -54,7 +110,63 @@ const INITIAL_DATA = {
           uomId: 'l',
           formFactors: ['200L drum'],
           defaultFormFactor: '200L drum',
-          lots: [],
+          lots: [
+            {
+              id: 'B-SLV-2401',
+              formFactor: '200L drum',
+              qty: 800,
+              buyInPrice: 1.20,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-SLV-2401-001',
+                  type: 'buy-in',
+                  timestamp: '2025-01-20T09:00:00.000Z',
+                  qtyChange: 800,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-SLV-2402',
+              formFactor: '200L drum',
+              qty: 600,
+              buyInPrice: 1.15,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-SLV-2402-001',
+                  type: 'buy-in',
+                  timestamp: '2025-02-15T09:00:00.000Z',
+                  qtyChange: 1000,
+                  reference: null,
+                },
+                {
+                  id: 'TXN-SLV-2402-002',
+                  type: 'production-use',
+                  timestamp: '2025-02-25T14:00:00.000Z',
+                  qtyChange: -400,
+                  reference: 'PROD-002',
+                },
+              ],
+            },
+            {
+              id: 'B-SLV-2403',
+              formFactor: '200L drum',
+              qty: 200,
+              buyInPrice: 1.25,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-SLV-2403-001',
+                  type: 'buy-in',
+                  timestamp: '2025-03-12T09:00:00.000Z',
+                  qtyChange: 200,
+                  reference: null,
+                },
+              ],
+            },
+          ],
           warehousePolicies: [],
           recipe: null,
         },
@@ -65,7 +177,118 @@ const INITIAL_DATA = {
           uomId: 'l',
           formFactors: ['200L drum', '1L bottle', '5L Jerry can'],
           defaultFormFactor: '200L drum',
-          lots: [],
+          lots: [
+            {
+              id: 'B-MKR-D2401',
+              formFactor: '200L drum',
+              qty: 1000,
+              buyInPrice: 2.50,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-D2401-001',
+                  type: 'buy-in',
+                  timestamp: '2025-01-25T09:00:00.000Z',
+                  qtyChange: 1000,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-MKR-D2402',
+              formFactor: '200L drum',
+              qty: 400,
+              buyInPrice: 2.45,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-D2402-001',
+                  type: 'buy-in',
+                  timestamp: '2025-02-20T09:00:00.000Z',
+                  qtyChange: 600,
+                  reference: null,
+                },
+                {
+                  id: 'TXN-MKR-D2402-002',
+                  type: 'production-use',
+                  timestamp: '2025-03-01T14:00:00.000Z',
+                  qtyChange: -200,
+                  reference: 'PROD-003',
+                },
+              ],
+            },
+            {
+              id: 'B-MKR-B2401',
+              formFactor: '1L bottle',
+              qty: 50,
+              buyInPrice: 3.20,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-B2401-001',
+                  type: 'buy-in',
+                  timestamp: '2025-02-01T09:00:00.000Z',
+                  qtyChange: 50,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-MKR-B2402',
+              formFactor: '1L bottle',
+              qty: 30,
+              buyInPrice: 3.10,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-B2402-001',
+                  type: 'buy-in',
+                  timestamp: '2025-03-01T09:00:00.000Z',
+                  qtyChange: 30,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-MKR-J2401',
+              formFactor: '5L Jerry can',
+              qty: 100,
+              buyInPrice: 2.80,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-J2401-001',
+                  type: 'buy-in',
+                  timestamp: '2025-01-30T09:00:00.000Z',
+                  qtyChange: 100,
+                  reference: null,
+                },
+              ],
+            },
+            {
+              id: 'B-MKR-J2402',
+              formFactor: '5L Jerry can',
+              qty: 75,
+              buyInPrice: 2.75,
+              highlightNew: false,
+              transactions: [
+                {
+                  id: 'TXN-MKR-J2402-001',
+                  type: 'buy-in',
+                  timestamp: '2025-02-15T09:00:00.000Z',
+                  qtyChange: 100,
+                  reference: null,
+                },
+                {
+                  id: 'TXN-MKR-J2402-002',
+                  type: 'production-use',
+                  timestamp: '2025-03-05T14:00:00.000Z',
+                  qtyChange: -25,
+                  reference: 'PROD-004',
+                },
+              ],
+            },
+          ],
           warehousePolicies: [],
           recipe: null,
         },
@@ -78,7 +301,6 @@ const INITIAL_DATA = {
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
             { name: 'Production batch',   type: 'number', required: true },
-            { name: 'Bag No.',            type: 'number', required: true },
           ],
         },
         {
@@ -96,7 +318,6 @@ const INITIAL_DATA = {
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
             { name: 'blending batch',     type: 'number', required: true },
-            { name: 'Drum No.',           type: 'number', required: true },
           ],
         },
         {
@@ -106,7 +327,6 @@ const INITIAL_DATA = {
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
             { name: 'blending batch',     type: 'number', required: true },
-            { name: 'Drum No.',           type: 'number', required: true },
           ],
         },
         {
@@ -116,7 +336,6 @@ const INITIAL_DATA = {
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
             { name: 'blending batch',     type: 'number', required: true },
-            { name: 'Drum No.',           type: 'number', required: true },
           ],
         },
       ],
@@ -218,7 +437,7 @@ export default function App() {
       case 16: if (managerActiveTab === 'items') advance(); break;
       case 17: if (activeModal?.type === 'editRecipe') advance(); break;
       case 18: if (cokeItem?.recipe != null && !activeModal) advance(); break;
-      case 21: if (activeModal?.type === 'createLot') advance(); break;
+      case 21: if (activeModal?.type === 'createLots') advance(); break;
       case 22: if ((cokePowderItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
       case 23: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
       case 24: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
@@ -241,14 +460,19 @@ export default function App() {
 
   // ── Data mutators ──────────────────────────────────────────────
 
-  const handleCreateLot = useCallback(({ categoryId, itemId, lot }) => {
-    const buyInTxn = {
-      id: `TXN-${Date.now()}`,
-      type: 'buy-in',
-      timestamp: new Date().toISOString(),
-      qtyChange: lot.qty,
-      reference: null,
-    };
+  const handleCreateLots = useCallback(({ categoryId, itemId, lots }) => {
+    const now = new Date().toISOString();
+    const newLots = lots.map((lot, i) => ({
+      ...lot,
+      highlightNew: true,
+      transactions: [{
+        id: `TXN-${Date.now()}-${i}`,
+        type: 'buy-in',
+        timestamp: now,
+        qtyChange: lot.qty,
+        reference: null,
+      }],
+    }));
     setData(prev => ({
       ...prev,
       categories: prev.categories.map(cat =>
@@ -257,13 +481,14 @@ export default function App() {
           items: cat.items.map(item =>
             item.id !== itemId ? item : {
               ...item,
-              lots: [...item.lots, { ...lot, highlightNew: true, transactions: [buyInTxn] }],
+              lots: [...item.lots, ...newLots],
             }
           ),
         }
       ),
     }));
-    showToast('Lot created successfully', 'success');
+    const count = lots.length;
+    showToast(count === 1 ? '1 lot created' : `${count} lots created`, 'success');
     closeModal();
   }, [showToast, closeModal]);
 
@@ -591,17 +816,17 @@ export default function App() {
     if (!activeModal) return null;
     const { type, payload } = activeModal;
 
-    if (type === 'createLot') {
+    if (type === 'createLots') {
       const category = data.categories.find(c => c.id === payload.categoryId);
       const uomEntry = data.uom.find(u => u.id === payload.item?.uomId);
       const uomLabel = uomEntry ? `${uomEntry.name} (${uomEntry.symbol})` : '—';
       return (
-        <CreateLotModal
+        <CreateLotsModal
           category={category}
           item={payload.item}
           preselectedFormFactor={payload.formFactor || ''}
           uomLabel={uomLabel}
-          onSubmit={(lot) => handleCreateLot({ categoryId: payload.categoryId, itemId: payload.item.id, lot })}
+          onSubmit={(lots) => handleCreateLots({ categoryId: payload.categoryId, itemId: payload.item.id, lots })}
           onClose={closeModal}
         />
       );

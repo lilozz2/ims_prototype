@@ -212,16 +212,18 @@ function ShimmerField() {
   );
 }
 
-// ── CreateLotModal ────────────────────────────────────────────────
+// ── CreateLotsModal ───────────────────────────────────────────────
 
-export function CreateLotModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
+function makeEntry() {
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), batchId: 'B-' + Date.now().toString(36).toUpperCase(), qty: '', buyInPrice: '' };
+}
+
+export function CreateLotsModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
   const [formFactor, setFormFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
   const [attrValues, setAttrValues] = useState({});
-  const [batchId, setBatchId] = useState('B-' + Date.now().toString(36).toUpperCase());
-  const [qty, setQty] = useState('');
-  const [buyInPrice, setBuyInPrice] = useState('');
+  const [entries, setEntries] = useState(() => [makeEntry()]);
   const [submitting, setSubmitting] = useState(false);
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -258,25 +260,38 @@ export function CreateLotModal({ category, item, preselectedFormFactor, uomLabel
     setAttrValues(prev => ({ ...prev, [fieldName]: value }));
   };
 
+  const updateEntry = (id, field, value) => {
+    setEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+  };
+
+  const addEntry = () => {
+    setEntries(prev => [...prev, makeEntry()]);
+  };
+
+  const removeEntry = (id) => {
+    setEntries(prev => prev.filter(e => e.id !== id));
+  };
+
   const handleSubmit = () => {
-    if (!formFactor || !batchId || !qty) return;
+    const validEntries = entries.filter(e => e.batchId && e.qty);
+    if (!formFactor || validEntries.length === 0) return;
     setSubmitting(true);
     setTimeout(() => {
-      const lot = {
-        id: batchId,
+      const lots = validEntries.map(e => ({
+        id: e.batchId,
         formFactor,
-        qty: parseInt(qty, 10),
-        buyInPrice: parseFloat(buyInPrice) || 0,
+        qty: parseInt(e.qty, 10),
+        buyInPrice: parseFloat(e.buyInPrice) || 0,
         attributes: attrValues,
         highlightNew: true,
-      };
-      onSubmit(lot);
+      }));
+      onSubmit(lots);
       setSubmitting(false);
     }, 200);
   };
 
   return (
-    <ModalShell title={`Create Lot — ${item?.name}`} onClose={onClose}>
+    <ModalShell title={`Create Lots — ${item?.name}`} onClose={onClose}>
       <FormField label="Category">
         <ReadOnlyField value={category?.name} />
       </FormField>
@@ -377,50 +392,78 @@ export function CreateLotModal({ category, item, preselectedFormFactor, uomLabel
         </div>
       )}
 
+      {/* Lot entries */}
       <div className="border-t border-slate-100 pt-4 mt-2">
-        <FormField label="Batch ID" required hint="Auto-generated — you can override this">
-          <TextInput
-            value={batchId}
-            onChange={e => setBatchId(e.target.value)}
-            placeholder="Batch ID"
-          />
-        </FormField>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm font-medium" style={{ color: '#1E1B4B' }}>Lots</span>
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-semibold"
+            style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
+          >
+            {entries.length}
+          </span>
+        </div>
 
-        <FormField label="Quantity" required>
-          <NumberInput
-            value={qty}
-            onChange={e => setQty(e.target.value)}
-            placeholder="0"
-            min="0"
-            step="1"
-          />
-        </FormField>
-
-        <FormField label="Buy-in Price" hint="Per unit cost">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
-            <input
-              type="number"
-              className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
-              style={{ borderColor: '#E2E8F0' }}
-              value={buyInPrice}
-              onChange={e => setBuyInPrice(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
-              onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
-            />
+        {entries.map((entry) => (
+          <div key={entry.id} className="mb-4 p-3 rounded-lg border" style={{ borderColor: '#E2E8F0' }}>
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="Quantity" required>
+                <NumberInput
+                  value={entry.qty}
+                  onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="1"
+                />
+              </FormField>
+              <FormField label="Buy-in Price" hint="Per unit">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
+                  <input
+                    type="number"
+                    className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
+                    style={{ borderColor: '#E2E8F0' }}
+                    value={entry.buyInPrice}
+                    onChange={e => updateEntry(entry.id, 'buyInPrice', e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                    onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+                  />
+                </div>
+              </FormField>
+              <div className="flex items-center justify-end h-full">
+                {entries.length > 1 && (
+                  <button
+                    className="p-1.5 rounded text-slate-400 hover:bg-red-100 hover:text-red-500 transition-colors"
+                    onClick={() => removeEntry(entry.id)}
+                    title="Remove"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </FormField>
+        ))}
+
+        <button
+          className="flex items-center gap-1.5 text-sm font-medium mb-4 hover:opacity-80 transition-opacity"
+          style={{ color: '#6366F1' }}
+          onClick={addEntry}
+        >
+          <Plus size={14} />
+          Add Another
+        </button>
       </div>
 
       <SubmitButton
         loading={submitting}
         onClick={handleSubmit}
-        disabled={!formFactor || !batchId || !qty}
+        disabled={!formFactor || !entries.some(e => e.batchId && e.qty)}
       >
-        Create Lot
+        Create Lots
       </SubmitButton>
     </ModalShell>
   );

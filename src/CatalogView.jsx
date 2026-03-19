@@ -88,10 +88,10 @@ function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all duration-150 hover:bg-indigo-50"
               style={{ borderColor: '#6366F1', color: '#6366F1', backgroundColor: 'transparent' }}
               onClick={e => { e.stopPropagation(); onCreateLot(item); }}
-              aria-label={`Create lot for ${item.name}`}
+              aria-label={`Create lots for ${item.name}`}
             >
               <Plus size={12} />
-              Create Lot
+              Create Lots
             </button>
             {item.recipe && (
               <button
@@ -137,12 +137,6 @@ function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
                   <table className="w-full">
                     <thead>
                       <tr>
-                        <th
-                          className="py-1.5 pl-12 pr-3 text-left text-xs font-medium uppercase tracking-wider"
-                          style={{ color: '#94A3B8' }}
-                        >
-                          Batch ID
-                        </th>
                         <th
                           className="py-1.5 px-3 text-left text-xs font-medium uppercase tracking-wider"
                           style={{ color: '#94A3B8' }}

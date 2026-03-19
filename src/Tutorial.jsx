@@ -276,7 +276,7 @@ export const TUTORIAL_STEPS = [
     position: 'bottom',
     title: 'Buy Coke Powder Stock',
     description: 'Before you can produce Coke, you need stock of Coke Powder. Create a lot to record your purchase.',
-    instruction: 'Click "+ Create Lot" on the Coke Powder row',
+    instruction: 'Click "+ Create Lots" on the Coke Powder row',
   },
   {
     id: 'fill-create-lot',
@@ -290,7 +290,7 @@ export const TUTORIAL_STEPS = [
       'Buy-in Price: $5.00',
       'Batch ID: auto-generated or type your own',
     ],
-    instruction: 'Click "Create Lot" to save',
+    instruction: 'Click "Create Lots" to save',
   },
   {
     id: 'produce-coke',
