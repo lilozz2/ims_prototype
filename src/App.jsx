@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
-import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
+import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal, BatchMoveModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
 
@@ -820,6 +820,37 @@ export default function App() {
     closeModal();
   }, [showToast, closeModal]);
 
+  const handleBatchMove = useCallback(({ categoryId, itemId, lotIds, newLocationId }) => {
+    setData(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat =>
+        cat.id !== categoryId ? cat : {
+          ...cat,
+          items: cat.items.map(item =>
+            item.id !== itemId ? item : {
+              ...item,
+              lots: item.lots.map(lot =>
+                !lotIds.includes(lot.id) ? lot : {
+                  ...lot,
+                  locationId: newLocationId,
+                  transactions: [...(lot.transactions || []), {
+                    id: `TXN-${Date.now()}-move-${lot.id}`,
+                    type: 'move',
+                    timestamp: new Date().toISOString(),
+                    qtyChange: 0,
+                    reference: newLocationId,
+                  }],
+                }
+              ),
+            }
+          ),
+        }
+      ),
+    }));
+    showToast(`${lotIds.length} lot(s) moved successfully.`, 'success');
+    closeModal();
+  }, [showToast, closeModal]);
+
   // ── Callbacks passed down ──────────────────────────────────────
 
   const managerHandlers = {
@@ -987,6 +1018,24 @@ export default function App() {
           data={data}
           executionType={executionType}
           onExecute={(execPayload) => handleExecuteRecipe({ ...execPayload, categoryId: payload.categoryId, item: payload.item })}
+          onClose={closeModal}
+        />
+      );
+    }
+    if (type === 'batchMove') {
+      return (
+        <BatchMoveModal
+          lots={payload.lots}
+          locations={data.locations}
+          onMove={(newLocationId) => {
+            handleBatchMove({
+              categoryId: payload.categoryId,
+              itemId: payload.item.id,
+              lotIds: payload.lotIds,
+              newLocationId,
+            });
+            payload.onMoved?.();
+          }}
           onClose={closeModal}
         />
       );

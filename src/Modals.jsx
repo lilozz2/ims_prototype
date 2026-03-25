@@ -1035,6 +1035,7 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                   'produce':        { label: 'Produce',    bg: '#10B981', fg: '#fff'    },
                   'draw-down':      { label: 'Draw Down',  bg: '#8B5CF6', fg: '#fff'    },
                   'production-use': { label: 'Production', bg: '#F59E0B', fg: '#1C1917' },
+                  'move':           { label: 'Move',       bg: '#0EA5E9', fg: '#fff'    },
                 };
                 const txStyle = txTypeMap[txn.type] || { label: txn.type, bg: '#E2E8F0', fg: '#64748B' };
                 const isInflow = txn.qtyChange >= 0;
@@ -1063,6 +1064,14 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                           </span>
                         </p>
                       )}
+                      {txn.type === 'move' && txn.reference && (
+                        <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
+                          →{' '}
+                          <span style={{ color: '#1E1B4B', fontWeight: 500 }}>
+                            {locations?.find(l => l.id === txn.reference)?.name || txn.reference}
+                          </span>
+                        </p>
+                      )}
                       {isInflow && txn.buyInPrice != null && (
                         <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
                           Unit price: <span style={{ color: '#10B981', fontWeight: 500 }}>${txn.buyInPrice?.toFixed(2) ?? '—'}</span>
@@ -1071,9 +1080,9 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                     </div>
                     <div
                       className="text-sm font-semibold flex-shrink-0"
-                      style={{ color: txn.qtyChange >= 0 ? '#10B981' : '#EF4444' }}
+                      style={{ color: txn.qtyChange > 0 ? '#10B981' : txn.qtyChange < 0 ? '#EF4444' : '#94A3B8' }}
                     >
-                      {txn.qtyChange >= 0 ? '+' : ''}{txn.qtyChange.toLocaleString()}
+                      {txn.qtyChange === 0 ? '±0' : txn.qtyChange > 0 ? `+${txn.qtyChange.toLocaleString()}` : txn.qtyChange.toLocaleString()}
                     </div>
                   </div>
                 );
@@ -1596,6 +1605,53 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
         disabled={!canSubmit}
       >
         {executionType === 'draw-down' ? 'Draw Down' : 'Produce'}
+      </SubmitButton>
+    </ModalShell>
+  );
+}
+
+// ── BatchMoveModal ─────────────────────────────────────────────
+
+export function BatchMoveModal({ lots, locations, onMove, onClose }) {
+  const [newLocationId, setNewLocationId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = () => {
+    if (!newLocationId) return;
+    setSubmitting(true);
+    setTimeout(() => {
+      onMove(newLocationId);
+      setSubmitting(false);
+    }, 200);
+  };
+
+  return (
+    <ModalShell title={`Move ${lots.length} Lot${lots.length !== 1 ? 's' : ''}`} onClose={onClose}>
+      <div className="rounded-xl p-3 mb-5" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+        <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#94A3B8' }}>
+          Selected Lots
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {lots.map(lot => (
+            <span key={lot.id} className="text-xs font-mono px-2 py-0.5 rounded"
+                  style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}>
+              {lot.id}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <FormField label="New Location" required>
+        <SelectInput value={newLocationId} onChange={e => setNewLocationId(e.target.value)}>
+          <option value="">Select location…</option>
+          {locations.map(loc => (
+            <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
+          ))}
+        </SelectInput>
+      </FormField>
+
+      <SubmitButton loading={submitting} onClick={handleSubmit} disabled={!newLocationId}>
+        Move Lots
       </SubmitButton>
     </ModalShell>
   );

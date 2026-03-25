@@ -527,6 +527,14 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
   const [expanded, setExpanded] = useState(true);
   const [editingLotId, setEditingLotId] = useState(null);
   const [editQty, setEditQty] = useState('');
+  const [selectedLotIds, setSelectedLotIds] = useState(new Set());
+  const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+
+  const toggleLot = (lotId) => setSelectedLotIds(prev => {
+    const next = new Set(prev);
+    next.has(lotId) ? next.delete(lotId) : next.add(lotId);
+    return next;
+  });
   const ffLots = (item.lots || []).filter(lot => lot.formFactor === ffName);
 
   const startQtyEdit = (lot, e) => {
@@ -544,7 +552,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
   };
 
   return (
-    <div className="ml-6 rounded-lg border border-slate-200 overflow-hidden mb-2">
+    <div className="ml-6 rounded-lg border border-slate-200 mb-2">
       {/* Row header */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
@@ -654,6 +662,14 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                   className="flex items-center gap-3 cursor-pointer"
                   onClick={() => editingLotId !== lot.id && onOpenModal('lotHistory', { lot })}
                 >
+                  <input
+                    type="checkbox"
+                    checked={selectedLotIds.has(lot.id)}
+                    onChange={() => toggleLot(lot.id)}
+                    onClick={e => e.stopPropagation()}
+                    className="flex-shrink-0 cursor-pointer"
+                    style={{ accentColor: '#6366F1' }}
+                  />
                   <span className="text-xs font-mono" style={{ color: '#1E1B4B' }}>{lot.id}</span>
                   {lot.highlightNew && (
                     <span
@@ -709,6 +725,48 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                 </div>
               </div>
             ))
+          )}
+          {selectedLotIds.size > 0 && (
+            <div className="flex items-center justify-between px-4 py-2 border-t"
+                 style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}>
+              <span className="text-xs font-medium" style={{ color: '#4F46E5' }}>
+                {selectedLotIds.size} lot{selectedLotIds.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="relative">
+                {batchMenuOpen && (
+                  <div className="fixed inset-0 z-[9]" onClick={() => setBatchMenuOpen(false)} />
+                )}
+                <button
+                  onClick={() => setBatchMenuOpen(v => !v)}
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-semibold"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                >
+                  Batch Actions <ChevronDown size={12} />
+                </button>
+                {batchMenuOpen && (
+                  <div className="absolute right-0 mt-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
+                       style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}>
+                    <button
+                      className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
+                      style={{ color: '#1E1B4B' }}
+                      onClick={() => {
+                        setBatchMenuOpen(false);
+                        const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
+                        onOpenModal('batchMove', {
+                          categoryId: category.id,
+                          item,
+                          lotIds: [...selectedLotIds],
+                          lots: selectedLots,
+                          onMoved: () => setSelectedLotIds(new Set()),
+                        });
+                      }}
+                    >
+                      Move
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
