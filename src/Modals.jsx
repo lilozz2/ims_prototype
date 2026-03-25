@@ -1087,6 +1087,7 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
 
 export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
   const [selected, setSelected] = useState(item?.formFactors || []);
+  const [typeMap, setTypeMap] = useState(item?.formFactorTypes || {});
   const [submitting, setSubmitting] = useState(false);
 
   const toggle = (ffName) => {
@@ -1101,7 +1102,7 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
       const newDefaultFF = selected.includes(item?.defaultFormFactor)
         ? item.defaultFormFactor
         : (selected[0] || '');
-      onSubmit({ ...item, formFactors: selected, defaultFormFactor: newDefaultFF });
+      onSubmit({ ...item, formFactors: selected, formFactorTypes: typeMap, defaultFormFactor: newDefaultFF });
       setSubmitting(false);
     }, 200);
   };
@@ -1109,7 +1110,7 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
   return (
     <ModalShell title={`Form Factors — ${item?.name}`} onClose={onClose}>
       <p className="text-sm mb-4" style={{ color: '#64748B' }}>
-        Select which form factors this item ships in.
+        Select which form factors this item ships in and set the type for each.
       </p>
 
       {(category?.formFactors || []).length === 0 ? (
@@ -1122,9 +1123,9 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
       ) : (
         <div className="space-y-2 mb-4">
           {category.formFactors.map(ff => (
-            <label
+            <div
               key={ff.name}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors"
               style={{
                 borderColor: selected.includes(ff.name) ? '#6366F1' : '#E2E8F0',
                 backgroundColor: selected.includes(ff.name) ? '#EEF2FF' : '#fff',
@@ -1135,10 +1136,22 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
                 checked={selected.includes(ff.name)}
                 onChange={() => toggle(ff.name)}
                 style={{ accentColor: '#6366F1' }}
-                className="w-4 h-4 cursor-pointer"
+                className="w-4 h-4 cursor-pointer flex-shrink-0"
               />
-              <span className="text-sm font-medium" style={{ color: '#1E1B4B' }}>{ff.name}</span>
-            </label>
+              <span className="text-sm font-medium flex-1" style={{ color: '#1E1B4B' }}>{ff.name}</span>
+              <select
+                value={typeMap[ff.name] || 'To Purchase'}
+                onChange={e => setTypeMap(prev => ({ ...prev, [ff.name]: e.target.value }))}
+                disabled={!selected.includes(ff.name)}
+                onClick={e => e.stopPropagation()}
+                className="text-xs rounded-md border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ padding: '3px 6px', borderColor: '#E2E8F0', color: '#1E1B4B', backgroundColor: '#fff' }}
+              >
+                <option value="To Purchase">To Purchase</option>
+                <option value="To Manufacture">To Manufacture</option>
+                <option value="To Draw Down">To Draw Down</option>
+              </select>
+            </div>
           ))}
         </div>
       )}

@@ -105,7 +105,8 @@ const INITIAL_DATA = {
             },
           ],
           warehousePolicies: [],
-          recipe: null,
+          formFactorTypes: { '2.5kg bag': 'To Purchase' },
+          formFactorRecipes: {},
         },
         {
           id: 'solvent-001',
@@ -178,7 +179,8 @@ const INITIAL_DATA = {
             },
           ],
           warehousePolicies: [],
-          recipe: null,
+          formFactorTypes: { '200L drum': 'To Purchase' },
+          formFactorRecipes: {},
         },
       ],
       attributeSchemas: [
@@ -342,7 +344,8 @@ const INITIAL_DATA = {
             },
           ],
           warehousePolicies: [],
-          recipe: null,
+          formFactorTypes: { '200L drum': 'To Manufacture', '1L bottle': 'To Draw Down', '5L Jerry can': 'To Draw Down' },
+          formFactorRecipes: {},
         },
       ],
       attributeSchemas: [
@@ -735,13 +738,16 @@ export default function App() {
     showToast('Conversion removed', 'success');
   }, [showToast]);
 
-  const handleSaveRecipe = useCallback((itemId, recipe) => {
+  const handleSaveRecipe = useCallback((itemId, formFactor, recipe) => {
     setData(prev => ({
       ...prev,
       categories: prev.categories.map(cat => ({
         ...cat,
         items: cat.items.map(item =>
-          item.id !== itemId ? item : { ...item, recipe }
+          item.id !== itemId ? item : {
+            ...item,
+            formFactorRecipes: { ...(item.formFactorRecipes || {}), [formFactor]: recipe },
+          }
         ),
       })),
     }));
@@ -753,7 +759,6 @@ export default function App() {
       return itemId;
     })();
     showToast(`Recipe saved for ${itemName}`, 'success');
-    setRecipeBuilderState(null);
     closeModal();
   }, [showToast, closeModal, data.categories]);
 
@@ -976,9 +981,9 @@ export default function App() {
       return (
         <RecipeBuilder
           item={payload.item}
-          initialRecipe={payload.item.recipe}
+          initialRecipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
           data={data}
-          onSave={(recipe) => handleSaveRecipe(payload.item.id, recipe)}
+          onSave={(recipe) => handleSaveRecipe(payload.item.id, payload.formFactor, recipe)}
           onClose={closeModal}
         />
       );
@@ -987,7 +992,7 @@ export default function App() {
       return (
         <ExecutionModal
           item={payload.item}
-          recipe={payload.item.recipe}
+          recipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
           data={data}
           onExecute={(execPayload) => handleExecuteRecipe({ ...execPayload, categoryId: payload.categoryId, item: payload.item })}
           onClose={closeModal}

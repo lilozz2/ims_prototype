@@ -152,16 +152,6 @@ function ItemsTab({ category, uom, onUpdate, onOpenModal }) {
                           <Pencil size={14} />
                         </button>
                         <button
-                          data-tutorial={item.id === 'coke-004' ? 'recipe-btn-coke' : undefined}
-                          className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-indigo-50"
-                          style={{ color: item.recipe !== null && item.recipe !== undefined ? '#6366F1' : '#94A3B8' }}
-                          onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item })}
-                          aria-label={item.recipe ? `Edit recipe for ${item.name}` : `Add recipe for ${item.name}`}
-                          title={item.recipe ? 'Edit Recipe' : 'Add Recipe'}
-                        >
-                          <FlaskConical size={14} />
-                        </button>
-                        <button
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors hover:bg-indigo-50"
                           style={{ color: '#6366F1' }}
                           onClick={() => onOpenModal('attachFormFactors', { categoryId: category.id, item })}
@@ -583,23 +573,66 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
           {ffLots.length} lot{ffLots.length !== 1 ? 's' : ''}
         </span>
         <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          <button
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#6366F1', color: '#fff' }}
-            onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
-          >
-            <Plus size={11} />
-            Purchase Lots
-          </button>
-          {item.recipe && (
-            <button
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#10B981', color: '#fff' }}
-              onClick={() => onOpenModal('produceLot', { categoryId: category.id, item })}
-            >
-              Produce
-            </button>
-          )}
+          {(() => {
+            const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
+            const ffRecipe = item.formFactorRecipes?.[ffName] || null;
+            return (
+              <>
+                {ffType === 'To Purchase' && (
+                <button
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
+                >
+                  <Plus size={11} />
+                  Purchase Lots
+                </button>
+                )}
+                {ffType === 'To Manufacture' && (
+                  <>
+                    <button
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                      onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
+                    >
+                      <FlaskConical size={11} />
+                      {ffRecipe ? 'Edit Recipe' : 'Create Recipe'}
+                    </button>
+                    {ffRecipe && (
+                      <button
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#10B981', color: '#fff' }}
+                        onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
+                      >
+                        Produce
+                      </button>
+                    )}
+                  </>
+                )}
+                {ffType === 'To Draw Down' && (
+                  <>
+                    <button
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
+                      onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
+                    >
+                      <FlaskConical size={11} />
+                      {ffRecipe ? 'Edit Drawdown' : 'Create Drawdown'}
+                    </button>
+                    {ffRecipe && (
+                      <button
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
+                        onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
+                      >
+                        Draw Down
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
