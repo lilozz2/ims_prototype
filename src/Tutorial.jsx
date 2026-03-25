@@ -68,265 +68,234 @@ function Spotlight({ rect, padding = 8 }) {
 
 // ─── Step definitions ────────────────────────────────────────────────
 export const TUTORIAL_STEPS = [
+  // 0
   {
     id: 'welcome',
     type: 'center',
-    title: '👋 Welcome to Nanolumi IMS!',
-    description: "Let's manufacture Coke from scratch. This tutorial walks you through the full production workflow.",
+    title: 'Welcome to the IMS',
+    description: "This tutorial walks you through the core inventory workflow.",
     bullets: [
-      '🏭 Add a production location for Coke',
-      '📏 Add Grams as a unit of measure',
-      '🧪 Add Coke Powder as a new ingredient',
-      '📦 Define its form factor and attributes',
-      '🔗 Build a 3-ingredient recipe for Coke',
-      '🛒 Buy Coke Powder stock (create a lot)',
-      '🏭 Run your first production batch',
+      'Purchase ingredients into a warehouse',
+      'Batch move lots to another location',
+      'Set up a production recipe',
+      'Produce finished goods',
+      'Draw down into smaller units',
+      'Track full transaction history',
     ],
   },
+  // 1
   {
-    id: 'go-to-manager',
+    id: 'navigate-to-ingredients',
     type: 'spotlight',
-    target: '[data-tutorial="mode-manager"]',
-    position: 'bottom',
-    title: 'Open Catalog Manager',
-    description: 'Switch to Catalog Manager to configure ingredients and recipes.',
-    instruction: 'Click "Catalog Manager"',
-  },
-  {
-    id: 'navigate-to-locations',
-    type: 'spotlight',
-    target: '[data-tutorial="sidebar-locations"]',
+    target: '[data-tutorial="sidebar-ingredients"]',
     position: 'right',
-    title: 'Open Locations',
-    description: 'Before anything else, define where Coke will be produced. This is the destination warehouse when you run production.',
-    instruction: 'Click "Locations" in the sidebar',
+    title: 'Navigate to Ingredients',
+    description: "First, let's go to the Ingredients category where powder is stored.",
+    instruction: 'Click "Ingredients" in the sidebar',
   },
+  // 2
   {
-    id: 'click-add-location',
+    id: 'go-to-items-lots-tab',
     type: 'spotlight',
-    target: '[data-tutorial="add-location-btn"]',
+    target: '[data-tutorial="tab-itemFF"]',
     position: 'bottom',
-    title: 'Add the Coke Production Floor',
-    description: "This location is where Coke will be physically produced. You'll select it as the destination warehouse later.",
-    instruction: 'Click "+ Add Location"',
+    title: 'Go to Items & Lots Tab',
+    description: 'The Items & Lots tab shows all items and their current stock.',
+    instruction: 'Click the "Items & Lots" tab',
   },
+  // 3
   {
-    id: 'fill-location',
+    id: 'purchase-powder',
+    type: 'spotlight',
+    target: '[data-tutorial="purchase-btn-powder-bag"]',
+    position: 'bottom',
+    title: 'Purchase Powder',
+    description: 'Click Purchase Lots to buy 3 bags of powder and assign them to SG Warehouse.',
+    instruction: 'Click "Purchase Lots" on the powder (2.5kg bag) row',
+  },
+  // 4
+  {
+    id: 'fill-purchase-form',
     type: 'corner',
-    title: 'Create the Production Location',
-    description: 'Enter the following details for the production facility:',
-    bullets: ['Name: Coke Production Floor', 'Type: Warehouse', 'Capacity: 5000'],
-    instruction: 'Fill the form and click Save',
+    title: 'Fill in the Purchase Form',
+    description: 'Enter quantity 3, set the location to SG Warehouse. Submit when done.',
+    instruction: 'Fill the form and click Create Lots',
   },
+  // 5
   {
-    id: 'navigate-to-uom',
+    id: 'select-purchased-lots',
     type: 'spotlight',
-    target: '[data-tutorial="sidebar-uom"]',
-    position: 'right',
-    title: 'Open Units of Measure',
-    description: 'Next, add Grams as a unit — Coke Powder is measured in grams.',
-    instruction: 'Click "Units of Measure" in the sidebar',
-  },
-  {
-    id: 'add-grams',
-    type: 'spotlight',
-    target: '[data-tutorial="add-uom-btn"]',
-    position: 'left',
-    title: 'Add the Gram Unit',
-    description: 'Create the unit Coke Powder will be measured in.',
-    bullets: ['Name: Gram', 'Symbol: g', 'Type: weight'],
-    instruction: 'Click "+ Add Unit", fill the form, then save',
-  },
-  {
-    id: 'select-beverages',
-    type: 'spotlight',
-    target: '[data-tutorial="sidebar-beverages"]',
-    position: 'right',
-    title: 'Select Beverages',
-    description: 'Navigate to the Beverages category.',
-    instruction: 'Click "Beverages" in the sidebar',
-  },
-  {
-    id: 'go-form-factors-tab',
-    type: 'spotlight',
-    target: '[data-tutorial="tab-formfactors"]',
-    position: 'bottom',
-    title: 'Open Form Factors Tab',
-    description: 'Before adding Coke Powder, we need to add its packaging type.',
-    instruction: 'Click the "Form Factors" tab',
-  },
-  {
-    id: 'add-form-factor',
-    type: 'spotlight',
-    target: '[data-tutorial="add-formfactor-btn"]',
+    target: '[data-tutorial="lot-area-powder-bag"]',
     position: 'top',
-    title: 'Add "500g Bag" Form Factor',
-    description: 'This is the packaging Coke Powder comes in.',
-    instruction: 'Click "+ Add Form Factor", type "500g Bag" under Name, set Qty to 500 and quantity to your created gram unit, then press Enter',
+    title: 'Select the Purchased Lots',
+    description: 'Use the checkboxes to select the powder lots you just purchased. The Batch Actions button will appear in the header row.',
+    instruction: 'Select the lots, then click Next',
+    showNext: true,
   },
+  // 6
   {
-    id: 'go-items-tab',
+    id: 'batch-actions-move',
     type: 'spotlight',
-    target: '[data-tutorial="tab-items"]',
-    position: 'bottom',
-    title: 'Go to Items Tab',
-    description: 'Now add Coke Powder as a new ingredient item.',
-    instruction: 'Click the "Items" tab',
-  },
-  {
-    id: 'click-add-item',
-    type: 'spotlight',
-    target: '[data-tutorial="add-item-btn"]',
-    position: 'bottom',
-    title: 'Add Coke Powder',
-    description: 'Create Coke Powder as a new ingredient.',
-    instruction: 'Click "+ Add Item"',
-  },
-  {
-    id: 'fill-item',
-    type: 'corner',
-    title: 'Fill in Item Details',
-    description: 'Enter the following for Coke Powder:',
-    bullets: ['Name: Coke Powder', 'SKU: CP-001', 'Default Form Factor: 500g Bag'],
-    instruction: 'Fill the form and click Save',
-  },
-  {
-    id: 'go-schemas-tab',
-    type: 'spotlight',
-    target: '[data-tutorial="tab-schemas"]',
-    position: 'bottom',
-    title: 'Open Attribute Schemas',
-    description: 'Define what data must be recorded for every Coke Powder lot.',
-    instruction: 'Click the "Attribute Schemas" tab',
-  },
-  {
-    id: 'click-add-schema',
-    type: 'spotlight',
-    target: '[data-tutorial="add-schema-btn"]',
-    position: 'bottom',
-    title: 'Add a Schema',
-    description: 'Create an attribute schema for Coke Powder (500g Bag).',
-    instruction: 'Click "+ Add Schema"',
-  },
-  {
-    id: 'fill-schema',
-    type: 'corner',
-    title: 'Configure Schema Fields',
-    description: 'Set up the schema for Coke Powder → 500g Bag:',
-    bullets: [
-      'Item: Coke Powder',
-      'Form Factor: 500g Bag',
-      'Field 1: "Carbonation Amount" — Number, Required',
-      'Field 2: "Expiry Date" — Date, Required',
-    ],
-    instruction: 'Add both fields, then click Save Schema',
-  },
-  {
-    id: 'back-to-items-tab',
-    type: 'spotlight',
-    target: '[data-tutorial="tab-items"]',
-    position: 'bottom',
-    title: 'Back to Items Tab',
-    description: "Now let's define the Coke manufacturing recipe!",
-    instruction: 'Click the "Items" tab',
-  },
-  {
-    id: 'open-recipe',
-    type: 'spotlight',
-    target: '[data-tutorial="recipe-btn-coke"]',
-    position: 'left',
-    title: 'Open Coke Recipe Builder',
-    description: 'Coke already exists as an item — now give it a recipe.',
-    instruction: 'Click the flask icon (🧪) on the Coke row',
-  },
-  {
-    id: 'build-recipe',
-    type: 'corner',
-    title: 'Build the Coke Recipe',
-    description: 'Add these 3 source ingredients using the + button:',
-    bullets: [
-      'Sparkling Water → 5 Gal Keg, qty 1',
-      'Bottle → 1L Bottle, qty 24',
-      'Coke Powder → 500g Bag, qty 1',
-    ],
-    instruction: 'Set output Form Factor and qty, give your recipe a name, then click Save Recipe',
-  },
-  {
-    id: 'switch-to-catalog',
-    type: 'spotlight',
-    target: '[data-tutorial="mode-catalog"]',
-    position: 'bottom',
-    title: 'Switch to Catalog',
-    description: 'Recipe saved! Now produce Coke from the Catalog view. This view will be where normal users purchase and produce items',
-    instruction: 'Click "Catalog"',
-  },
-  {
-    id: 'select-beverages-catalog',
-    type: 'spotlight',
-    target: '[data-tutorial="sidebar-beverages"]',
-    position: 'right',
-    title: 'Select Beverages',
-    description: 'Navigate to Beverages in the Catalog.',
-    instruction: 'Click "Beverages"',
-  },
-  {
-    id: 'buy-coke-powder',
-    type: 'spotlight',
-    target: '[data-tutorial="create-lot-btn-coke-powder"]',
-    position: 'bottom',
-    title: 'Buy Coke Powder Stock',
-    description: 'Before you can produce Coke, you need stock of Coke Powder. Create a lot to record your purchase.',
-    instruction: 'Click "+ Create Lots" on the Coke Powder row',
-  },
-  {
-    id: 'fill-create-lot',
-    type: 'corner',
-    title: 'Record a Coke Powder Purchase',
-    description: 'Fill in the lot details:',
-    bullets: [
-      'Form Factor: 500g Bag',
-      'Fill in the attribute fields (Carbonation Amount, Expiry Date)',
-      'Qty: 100',
-      'Buy-in Price: $5.00',
-      'Batch ID: auto-generated or type your own',
-    ],
-    instruction: 'Click "Create Lots" to save',
-  },
-  {
-    id: 'produce-coke',
-    type: 'spotlight',
-    target: '[data-tutorial="produce-btn-coke"]',
+    target: '[data-tutorial="batch-actions-btn"]',
     position: 'top',
-    title: '🏭 Produce Coke!',
-    description: 'Everything is set up. Manufacture your first Coke batch!',
-    instruction: 'Click "▶ Produce" on the Coke row',
+    title: 'Batch Actions → Move',
+    description: 'Click Batch Actions, then choose Move. This lets you relocate multiple lots at once.',
+    instruction: 'Click "Batch Actions" → "Move"',
   },
+  // 7
   {
-    id: 'confirm-production',
+    id: 'move-to-uskun',
     type: 'corner',
-    title: 'Configure the Production Run',
-    description: 'Set up your production run:',
-    bullets: [
-      'Select a source warehouse for each ingredient',
-      'Set Destination Warehouse to "Coke Production Floor"',
-      'Set multiplier (×1 is fine for testing)',
-    ],
-    instruction: 'Click "Confirm Produce" to finalize',
+    title: 'Move to Uskun Warehouse',
+    description: 'Select Uskun Warehouse as the destination and confirm.',
+    instruction: 'Set the destination to Uskun Warehouse and click Move Lots',
   },
+  // 8
+  {
+    id: 'navigate-to-finished-goods',
+    type: 'spotlight',
+    target: '[data-tutorial="sidebar-finished-goods"]',
+    position: 'right',
+    title: 'Go to Finished Goods',
+    description: 'Now navigate to Finished Goods to work with Marker Solution.',
+    instruction: 'Click "Finished Goods" in the sidebar',
+  },
+  // 9
+  {
+    id: 'create-production-recipe',
+    type: 'spotlight',
+    target: '[data-tutorial="recipe-btn-marker-200L"]',
+    position: 'bottom',
+    title: 'Create a Production Recipe',
+    description: 'Marker Solution (200L Drum) is manufactured from powder and solvent. Click Create Recipe to define the formula.',
+    instruction: 'Click "Create Recipe" on the Marker Solution (200L drum) row',
+  },
+  // 10
+  {
+    id: 'define-recipe',
+    type: 'corner',
+    title: 'Define the Recipe',
+    description: 'Add the source ingredients and set the output quantity.',
+    bullets: [
+      'Powder (2.5kg bag) — qty 5',
+      'Solvent (200L drum) — qty 20',
+      'Output quantity: 22',
+    ],
+    instruction: 'Add both sources, set output qty to 22, then Save',
+  },
+  // 11
+  {
+    id: 'produce-marker',
+    type: 'spotlight',
+    target: '[data-tutorial="produce-btn-marker-200L"]',
+    position: 'bottom',
+    title: 'Produce Marker Solution',
+    description: 'Your recipe is saved. Click Produce to start a production run for Marker Solution.',
+    instruction: 'Click "Produce" on the Marker Solution (200L drum) row',
+  },
+  // 12
+  {
+    id: 'sources-section',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-sources-section"]',
+    position: 'right',
+    title: 'Sources Section',
+    description: 'This section is split by ingredient. Each segment shows lots at your selected location that match that ingredient. Select a lot and use the slider to set how much to consume.',
+    instruction: 'Click Next to continue',
+    showNext: true,
+  },
+  // 13
+  {
+    id: 'destination-section',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-destination-section"]',
+    position: 'right',
+    title: 'Destination Section',
+    description: 'Define the lots you want to create. Add as many rows as needed — each row becomes a separate lot. Attribute fields (if any) apply to all destination lots.',
+    instruction: 'Click Next to continue',
+    showNext: true,
+  },
+  // 14
+  {
+    id: 'status-section',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-status-section"]',
+    position: 'right',
+    title: 'Status Section',
+    description: 'Live feedback on your production ratio. It compares your actual source selections against the recipe-defined ratio, scaled to your target destination quantity. Green = on target.',
+    instruction: 'Click Next to continue',
+    showNext: true,
+  },
+  // 15
+  {
+    id: 'fill-and-produce',
+    type: 'corner',
+    title: 'Fill in and Produce',
+    description: 'Select source lots for each ingredient, add destination lots, and confirm the production run.',
+    instruction: 'Fill in the form and click Produce',
+  },
+  // 16
+  {
+    id: 'create-drawdown-recipe',
+    type: 'spotlight',
+    target: '[data-tutorial="drawdown-btn-marker-5L"]',
+    position: 'bottom',
+    title: 'Create a Draw Down Recipe',
+    description: 'Marker Solution (5L Jerrycan) is drawn down from 200L Drums. Click Create Drawdown to define the ratio.',
+    instruction: 'Click "Create Drawdown" on the Marker Solution (5L Jerry can) row',
+  },
+  // 17
+  {
+    id: 'define-drawdown',
+    type: 'corner',
+    title: 'Define the Draw Down',
+    description: 'Add Marker Solution (200L drum) as the source and set a 1:1 ratio.',
+    bullets: [
+      'Source: Marker Solution (200L drum) — qty 1',
+      'Output quantity: 1',
+    ],
+    instruction: 'Set the source and output, then Save',
+  },
+  // 18
+  {
+    id: 'execute-drawdown',
+    type: 'spotlight',
+    target: '[data-tutorial="drawdown-execute-btn-marker-5L"]',
+    position: 'bottom',
+    title: 'Draw Down',
+    description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
+    instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
+  },
+  // 19
+  {
+    id: 'fill-and-drawdown',
+    type: 'corner',
+    title: 'Fill in and Draw Down',
+    description: 'Select a 200L drum source lot, add destination jerrycan lots, and confirm.',
+    instruction: 'Fill in the form and click Draw Down',
+  },
+  // 20
+  {
+    id: 'view-history',
+    type: 'corner',
+    title: 'View Transaction History',
+    description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
+    instruction: 'Click any lot card to open its history',
+  },
+  // 21
   {
     id: 'completion',
     type: 'completion',
-    title: 'You did it!',
-    description: "You've mastered the full Nanolumi IMS workflow:",
+    title: "You're all set!",
+    description: "You've completed the core IMS workflow. Every action is fully traceable through transaction history.",
     bullets: [
-      '✅ Created the Coke Production Floor location',
-      '✅ Added Gram as a unit of measure',
-      '✅ Added Coke Powder as a new ingredient',
-      '✅ Created its form factor (500g Bag)',
-      '✅ Defined attribute schema (Carbonation Amount + Expiry Date)',
-      '✅ Built a 3-ingredient recipe for Coke',
-      '✅ Bought Coke Powder stock',
-      '✅ Ran your first production batch!',
+      '✅ Purchased powder lots at SG Warehouse',
+      '✅ Batch moved lots to Uskun Warehouse',
+      '✅ Created a production recipe for Marker Solution',
+      '✅ Produced Marker Solution (200L drum)',
+      '✅ Created a draw-down recipe for 5L Jerrycan',
+      '✅ Drew down into 5L Jerry cans',
+      '✅ Viewed full transaction history',
     ],
   },
 ];
@@ -505,13 +474,24 @@ export default function Tutorial({ stepIndex, onNext, onSkip }) {
             <span className="text-xs" style={{ color: '#CBD5E1' }}>
               Step {stepIndex} of {totalActionSteps}
             </span>
-            <button
-              className="text-xs cursor-pointer transition-colors hover:text-slate-500"
-              style={{ color: '#CBD5E1' }}
-              onClick={onSkip}
-            >
-              Skip tutorial
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                className="text-xs cursor-pointer transition-colors hover:text-slate-500"
+                style={{ color: '#CBD5E1' }}
+                onClick={onSkip}
+              >
+                Skip tutorial
+              </button>
+              {step.showNext && (
+                <button
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer hover:opacity-90"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  onClick={onNext}
+                >
+                  Next →
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

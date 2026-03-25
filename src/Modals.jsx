@@ -1355,7 +1355,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       </FormField>
 
       {/* Sources section — one segment per recipe source */}
-      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-sources-section">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
           Sources
         </p>
@@ -1449,7 +1449,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       </div>
 
       {/* Destination section */}
-      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-destination-section">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
           Destination
         </p>
@@ -1535,7 +1535,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       {(() => {
         const destTotal = destRows.reduce((sum, r) => sum + (parseInt(r.qty, 10) || 0), 0);
         return (
-          <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+          <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-status-section">
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
               Status
             </p>

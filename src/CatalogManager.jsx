@@ -581,6 +581,43 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
           {ffLots.length} lot{ffLots.length !== 1 ? 's' : ''}
         </span>
         <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
+          {selectedLotIds.size > 0 && (
+            <div className="relative">
+              {batchMenuOpen && (
+                <div className="fixed inset-0 z-[9]" onClick={() => setBatchMenuOpen(false)} />
+              )}
+              <button
+                onClick={() => setBatchMenuOpen(v => !v)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                data-tutorial="batch-actions-btn"
+              >
+                Batch Actions ({selectedLotIds.size}) <ChevronDown size={12} />
+              </button>
+              {batchMenuOpen && (
+                <div className="absolute right-0 mt-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
+                     style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}>
+                  <button
+                    className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
+                    style={{ color: '#1E1B4B' }}
+                    onClick={() => {
+                      setBatchMenuOpen(false);
+                      const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
+                      onOpenModal('batchMove', {
+                        categoryId: category.id,
+                        item,
+                        lotIds: [...selectedLotIds],
+                        lots: selectedLots,
+                        onMoved: () => setSelectedLotIds(new Set()),
+                      });
+                    }}
+                  >
+                    Move
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           {(() => {
             const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
             const ffRecipe = item.formFactorRecipes?.[ffName] || null;
@@ -590,6 +627,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                 <button
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  data-tutorial={item.id === 'powder-001' && ffName === '2.5kg bag' ? 'purchase-btn-powder-bag' : undefined}
                   onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
                 >
                   <Plus size={11} />
@@ -601,6 +639,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                     <button
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                       style={{ backgroundColor: '#0D9488', color: '#fff' }}
+                      data-tutorial={item.id === 'marker-001' && ffName === '200L drum' ? 'recipe-btn-marker-200L' : undefined}
                       onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
                     >
                       <FlaskConical size={11} />
@@ -610,6 +649,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                       <button
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                         style={{ backgroundColor: '#0D9488', color: '#fff' }}
+                        data-tutorial={item.id === 'marker-001' && ffName === '200L drum' ? 'produce-btn-marker-200L' : undefined}
                         onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
                       >
                         Produce
@@ -622,6 +662,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                     <button
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                       style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
+                      data-tutorial={item.id === 'marker-001' && ffName === '5L Jerry can' ? 'drawdown-btn-marker-5L' : undefined}
                       onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
                     >
                       <FlaskConical size={11} />
@@ -631,6 +672,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                       <button
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                         style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
+                        data-tutorial={item.id === 'marker-001' && ffName === '5L Jerry can' ? 'drawdown-execute-btn-marker-5L' : undefined}
                         onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
                       >
                         Draw Down
@@ -646,7 +688,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
 
       {/* Lot rows */}
       {expanded && (
-        <div>
+        <div data-tutorial={item.id === 'powder-001' && ffName === '2.5kg bag' ? 'lot-area-powder-bag' : undefined}>
           {ffLots.length === 0 ? (
             <div className="px-4 py-3 text-xs text-center border-t border-slate-100" style={{ color: '#94A3B8' }}>
               No lots for this form factor
@@ -725,48 +767,6 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                 </div>
               </div>
             ))
-          )}
-          {selectedLotIds.size > 0 && (
-            <div className="flex items-center justify-between px-4 py-2 border-t"
-                 style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}>
-              <span className="text-xs font-medium" style={{ color: '#4F46E5' }}>
-                {selectedLotIds.size} lot{selectedLotIds.size !== 1 ? 's' : ''} selected
-              </span>
-              <div className="relative">
-                {batchMenuOpen && (
-                  <div className="fixed inset-0 z-[9]" onClick={() => setBatchMenuOpen(false)} />
-                )}
-                <button
-                  onClick={() => setBatchMenuOpen(v => !v)}
-                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-semibold"
-                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
-                >
-                  Batch Actions <ChevronDown size={12} />
-                </button>
-                {batchMenuOpen && (
-                  <div className="absolute right-0 mt-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
-                       style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}>
-                    <button
-                      className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
-                      style={{ color: '#1E1B4B' }}
-                      onClick={() => {
-                        setBatchMenuOpen(false);
-                        const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
-                        onOpenModal('batchMove', {
-                          categoryId: category.id,
-                          item,
-                          lotIds: [...selectedLotIds],
-                          lots: selectedLots,
-                          onMoved: () => setSelectedLotIds(new Set()),
-                        });
-                      }}
-                    >
-                      Move
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           )}
         </div>
       )}
@@ -897,6 +897,7 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
           <button
             key={tab.id}
             data-tutorial={
+              tab.id === 'itemFF' ? 'tab-itemFF' :
               tab.id === 'items' ? 'tab-items' :
               tab.id === 'formFactors' ? 'tab-formfactors' :
               tab.id === 'schemas' ? 'tab-schemas' : undefined

@@ -452,33 +452,44 @@ export default function App() {
   // ── Tutorial step advancement ───────────────────────────────────
   useEffect(() => {
     if (tutorialStep === null || tutorialStep === 0) return;
-    const bev = data.categories.find(c => c.id === 'beverages');
-    const cokeItem = bev?.items.find(i => i.id === 'coke-004');
-    const cokePowderItem = bev?.items.find(i => i.sku === 'CP-001');
+    const ingredients = data.categories.find(c => c.id === 'ingredients');
+    const powder = ingredients?.items.find(i => i.id === 'powder-001');
+    const finishedGoods = data.categories.find(c => c.id === 'finished-goods');
+    const marker = finishedGoods?.items.find(i => i.id === 'marker-001');
     const advance = () => setTutorialStep(s => s + 1);
     switch (tutorialStep) {
-      case 1:  advance(); break;
-      case 2:  if (selectedCategoryId === '__locations') advance(); break;
-      case 3:  if (activeModal?.type === 'addLocation') advance(); break;
-      case 4:  if (data.locations.length > 3 && !activeModal) advance(); break;
-      case 5:  if (selectedCategoryId === '__uom') advance(); break;
-      case 6:  if (data.uom.length > 6) advance(); break;
-      case 7:  if (selectedCategoryId === 'beverages') advance(); break;
-      case 8:  if (managerActiveTab === 'formFactors' && selectedCategoryId === 'beverages') advance(); break;
-      case 9:  if (bev && bev.formFactors.length > 4) advance(); break;
-      case 10: if (managerActiveTab === 'items' && selectedCategoryId === 'beverages') advance(); break;
-      case 11: if (activeModal?.type === 'addItem') advance(); break;
-      case 12: if (bev && bev.items.length > 4 && !activeModal) advance(); break;
-      case 13: if (managerActiveTab === 'schemas') advance(); break;
-      case 14: if (activeModal?.type === 'addSchema') advance(); break;
-      case 15: if (bev && bev.attributeSchemas.length > 3 && !activeModal) advance(); break;
-      case 16: if (managerActiveTab === 'items') advance(); break;
-      case 17: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 18: if (cokeItem?.recipe != null && !activeModal) advance(); break;
-      case 21: if (activeModal?.type === 'createLots') advance(); break;
-      case 22: if ((cokePowderItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
-      case 23: if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'coke-004') advance(); break;
-      case 24: if ((cokeItem?.lots?.length || 0) > 0 && !activeModal) advance(); break;
+      case 1: if (selectedCategoryId === 'ingredients') advance(); break;
+      case 2: if (managerActiveTab === 'itemFF' && selectedCategoryId === 'ingredients') advance(); break;
+      case 3: if (activeModal?.type === 'createLots') advance(); break;
+      case 4: if ((powder?.lots?.length || 0) >= 3 && !activeModal) advance(); break;
+      // step 5 is manual Next
+      case 6: if (activeModal?.type === 'batchMove') advance(); break;
+      case 7:
+        if (!activeModal && powder?.lots?.some(l => l.transactions?.some(t => t.type === 'move'))) advance();
+        break;
+      case 8: if (selectedCategoryId === 'finished-goods') advance(); break;
+      case 9: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 10:
+        if (marker?.formFactorRecipes?.['200L drum'] != null && !activeModal) advance();
+        break;
+      case 11:
+        if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
+        break;
+      // steps 12, 13, 14 are manual Next (modal open)
+      case 15:
+        if (!activeModal && marker?.lots?.some(l => l.transactions?.some(t => t.type === 'produce'))) advance();
+        break;
+      case 16: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 17:
+        if (marker?.formFactorRecipes?.['5L Jerry can'] != null && !activeModal) advance();
+        break;
+      case 18:
+        if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
+        break;
+      case 19:
+        if (!activeModal && marker?.lots?.some(l => l.formFactor === '5L Jerry can' && l.transactions?.some(t => t.type === 'draw-down'))) advance();
+        break;
+      case 20: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
   }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
@@ -1116,7 +1127,12 @@ export default function App() {
             return (
               <button
                 key={cat.id}
-                data-tutorial={cat.id === 'beverages' ? 'sidebar-beverages' : undefined}
+                data-tutorial={
+                  cat.id === 'beverages' ? 'sidebar-beverages' :
+                  cat.id === 'ingredients' ? 'sidebar-ingredients' :
+                  cat.id === 'finished-goods' ? 'sidebar-finished-goods' :
+                  undefined
+                }
                 className="w-full text-left px-3 py-2 rounded-lg mb-0.5 cursor-pointer flex items-center gap-2 transition-all duration-150"
                 style={
                   isActive
