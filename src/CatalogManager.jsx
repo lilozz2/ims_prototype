@@ -600,7 +600,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                   <>
                     <button
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                      style={{ backgroundColor: '#0D9488', color: '#fff' }}
                       onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
                     >
                       <FlaskConical size={11} />
@@ -609,7 +609,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                     {ffRecipe && (
                       <button
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                        style={{ backgroundColor: '#10B981', color: '#fff' }}
+                        style={{ backgroundColor: '#0D9488', color: '#fff' }}
                         onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
                       >
                         Produce
