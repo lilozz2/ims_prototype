@@ -437,6 +437,7 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
               Policies for <span style={{ color: '#6366F1' }}>{selectedItem.name}</span>
             </p>
             <button
+              data-tutorial="add-policy-btn"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
               style={{ backgroundColor: '#6366F1', color: '#fff' }}
               onClick={() => onOpenModal('addPolicy', { categoryId: category.id, itemId: selectedItem.id })}
@@ -910,7 +911,8 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
               tab.id === 'itemFF' ? 'tab-itemFF' :
               tab.id === 'items' ? 'tab-items' :
               tab.id === 'formFactors' ? 'tab-formfactors' :
-              tab.id === 'schemas' ? 'tab-schemas' : undefined
+              tab.id === 'schemas' ? 'tab-schemas' :
+              tab.id === 'policies' ? 'tab-policies' : undefined
             }
             className="px-4 py-2.5 text-sm font-medium cursor-pointer border-b-2 transition-all duration-150 -mb-px"
             style={

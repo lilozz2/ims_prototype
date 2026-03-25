@@ -570,12 +570,114 @@ function getTooltipPos(rect, position) {
   }
 }
 
+// ─── Setup Tutorial steps ─────────────────────────────────────────────
+// Order: UOM → Location → Form Factor → Item → attach FF → Schemas → Policy → Items & Lots
+export const SETUP_TUTORIAL_STEPS = [
+  // 0
+  { id: 'setup-welcome', type: 'center', title: 'Setup Tutorial',
+    description: 'Configure your IMS from scratch — create units of measure, locations, form factors, items, attributes, and warehouse policies.',
+    bullets: ['📏 Create a Unit of Measure', '📍 Create a Location', '📦 Create a Form Factor', '🧪 Create an Item', '📋 Define Attributes', '🏭 Set a Warehouse Policy'] },
+  // 1 — auto when selectedCategoryId === '__uom'
+  { id: 'setup-nav-uom', type: 'spotlight', target: '[data-tutorial="sidebar-uom"]', position: 'right',
+    title: '📏 Units of Measure', description: 'First, define a unit of measure that your item will use.',
+    instruction: 'Click "Units of Measure" in the sidebar' },
+  // 2 — showNext (click Add to open inline form, then Next)
+  { id: 'setup-add-uom', type: 'spotlight', target: '[data-tutorial="add-uom-btn"]', position: 'bottom',
+    title: 'Add a Unit of Measure', description: 'Click the Add button to open the creation form.',
+    instruction: 'Click "Add Unit", then click Next', showNext: true },
+  // 3 — auto when uomCount > init
+  { id: 'setup-fill-uom', type: 'spotlight', target: '[data-tutorial="uom-inline-form"]', position: 'bottom',
+    title: 'Fill in UoM Details', description: 'Enter the details for your unit of measure.',
+    bullets: ['Name: testUoM', 'Symbol: tUoM', 'Type: weight'],
+    instruction: 'Fill in the fields above, then click Save' },
+  // 4 — auto when selectedCategoryId === '__locations'
+  { id: 'setup-nav-locations', type: 'spotlight', target: '[data-tutorial="sidebar-locations"]', position: 'right',
+    title: '📍 Locations', description: 'Now create a warehouse location where your item will be stored.',
+    instruction: 'Click "Locations" in the sidebar' },
+  // 5 — auto when activeModal?.type === 'addLocation'
+  { id: 'setup-add-location', type: 'spotlight', target: '[data-tutorial="add-location-btn"]', position: 'bottom',
+    title: 'Add a Location', description: 'Click Add Location to open the form.',
+    instruction: 'Click "Add Location"' },
+  // 6 — auto when locationCount > init
+  { id: 'setup-fill-location', type: 'corner', title: 'Create testLocation',
+    description: 'Fill in the location details.',
+    bullets: ['Name: testLocation', 'Type: warehouse (or any)'],
+    instruction: 'Fill in the form, then click Save' },
+  // 7 — auto when selectedCategoryId === 'ingredients'
+  { id: 'setup-nav-category', type: 'spotlight', target: '[data-tutorial="sidebar-ingredients"]', position: 'right',
+    title: '📦 Navigate to Ingredients', description: 'Go to Ingredients to create form factors and items.',
+    instruction: 'Click "Ingredients" in the sidebar' },
+  // 8 — auto when managerActiveTab === 'formFactors'
+  { id: 'setup-go-ff-tab', type: 'spotlight', target: '[data-tutorial="tab-formfactors"]', position: 'bottom',
+    title: 'Go to Form Factors Tab', description: 'Form factors define the packaging format of an item (e.g. bag, drum, can).',
+    instruction: 'Click the "Form Factors" tab' },
+  // 9 — auto when ffCount > init
+  { id: 'setup-add-ff', type: 'spotlight', target: '[data-tutorial="add-formfactor-btn"]', position: 'bottom',
+    title: 'Create a Form Factor', description: 'Click Add, enter "testFormFactor" as the name, then Save.',
+    instruction: 'Click Add, type "testFormFactor", then Save' },
+  // 10 — auto when managerActiveTab === 'items'
+  { id: 'setup-go-items-tab', type: 'spotlight', target: '[data-tutorial="tab-items"]', position: 'bottom',
+    title: 'Go to Items Tab', description: 'Now create the item that will use testUoM.',
+    instruction: 'Click the "Items" tab' },
+  // 11 — auto when activeModal?.type === 'addItem'
+  { id: 'setup-add-item', type: 'spotlight', target: '[data-tutorial="add-item-btn"]', position: 'bottom',
+    title: 'Create an Item', description: 'Click Add Item to create test powder.',
+    instruction: 'Click "Add Item"' },
+  // 12 — auto when itemCount > init
+  { id: 'setup-fill-item', type: 'corner', title: 'Fill in Item Details',
+    description: 'Enter the item details, including the UoM you just created.',
+    bullets: ['Name: test powder', 'UoM: testUoM'],
+    instruction: 'Fill in the fields above, then click Save' },
+  // 13 — auto when activeModal?.type === 'attachFormFactors'
+  { id: 'setup-attach-ff', type: 'corner', title: 'Attach Form Factor',
+    description: 'Find the test powder row and click the "FF" button to attach form factors.',
+    instruction: 'Click the FF button on the test powder row' },
+  // 14 — showNext
+  { id: 'setup-select-ff', type: 'corner', title: 'Select testFormFactor',
+    description: 'In the modal, select testFormFactor from the list and save.',
+    instruction: 'Check "testFormFactor", then click Save', showNext: true },
+  // 15 — auto when managerActiveTab === 'schemas'
+  { id: 'setup-go-schemas-tab', type: 'spotlight', target: '[data-tutorial="tab-schemas"]', position: 'bottom',
+    title: 'Go to Attribute Schemas', description: 'Attribute schemas define metadata fields recorded per lot.',
+    instruction: 'Click the "Attribute Schemas" tab' },
+  // 16 — auto when activeModal?.type === 'addSchema'
+  { id: 'setup-add-schema', type: 'spotlight', target: '[data-tutorial="add-schema-btn"]', position: 'bottom',
+    title: 'Add an Attribute Schema', description: 'Define attributes for test powder / testFormFactor.',
+    instruction: 'Click "Add Schema"' },
+  // 17 — showNext
+  { id: 'setup-fill-schema', type: 'corner', title: 'Define Attribute Fields',
+    description: 'Add two fields to capture lot-level metadata.',
+    bullets: ['Field 1 — Name: Manufacturing Date, Type: date', 'Field 2 — Name: Batch Number, Type: text'],
+    instruction: 'Add both fields, then click Save', showNext: true },
+  // 18 — auto when managerActiveTab === 'policies'
+  { id: 'setup-go-policies-tab', type: 'spotlight', target: '[data-tutorial="tab-policies"]', position: 'bottom',
+    title: 'Go to Warehouse Policy', description: 'Warehouse policies define stock rules per location for this item.',
+    instruction: 'Click the "Warehouse Policy" tab' },
+  // 19 — auto when activeModal?.type === 'addPolicy'
+  { id: 'setup-add-policy', type: 'spotlight', target: '[data-tutorial="add-policy-btn"]', position: 'bottom',
+    title: 'Add a Warehouse Policy', description: 'Define minimum and maximum stock levels for test powder at testLocation.',
+    instruction: 'Click "Add Policy"' },
+  // 20 — showNext
+  { id: 'setup-fill-policy', type: 'corner', title: 'Fill in Policy Values',
+    description: 'Set arbitrary stock limits for test powder at testLocation.',
+    bullets: ['Location: testLocation', 'Min Stock: 10', 'Max Stock: 100', 'Conditions: Room Temperature'],
+    instruction: 'Fill in the fields above, then click Save', showNext: true },
+  // 21 — auto when managerActiveTab === 'itemFF'
+  { id: 'setup-go-itemff-tab', type: 'spotlight', target: '[data-tutorial="tab-itemFF"]', position: 'bottom',
+    title: 'Items & Lots', description: 'Go to Items & Lots to see your fully configured item.',
+    instruction: 'Click the "Items & Lots" tab' },
+  // 22
+  { id: 'setup-completion', type: 'completion', title: 'Setup Complete!',
+    description: 'Your IMS is configured and ready for inventory operations.',
+    bullets: ['✅ Created testUoM unit of measure', '✅ Created testLocation warehouse', '✅ Created testFormFactor form factor', '✅ Created test powder item with testUoM', '✅ Defined Manufacturing Date and Batch Number attributes', '✅ Set warehouse policy for testLocation'] },
+];
+
 // ─── Main Tutorial component ─────────────────────────────────────────
-export default function Tutorial({ stepIndex, onNext, onBack, onSkip }) {
+export default function Tutorial({ steps = TUTORIAL_STEPS, stepIndex, onNext, onBack, onSkip }) {
   const [targetRect, setTargetRect] = useState(null);
   const rafRef = useRef(null);
 
-  const step = TUTORIAL_STEPS[stepIndex];
+  const step = steps[stepIndex];
 
   // Poll for target element rect
   useEffect(() => {
@@ -597,7 +699,7 @@ export default function Tutorial({ stepIndex, onNext, onBack, onSkip }) {
 
   if (!step) return null;
 
-  const totalActionSteps = TUTORIAL_STEPS.length - 2; // exclude welcome + completion
+  const totalActionSteps = steps.length - 2; // exclude welcome + completion
 
   // ── Welcome modal ──
   if (step.type === 'center') {

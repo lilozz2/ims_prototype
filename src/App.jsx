@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
 import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal, BatchMoveModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
-import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
+import Tutorial, { TUTORIAL_STEPS, SETUP_TUTORIAL_STEPS } from './Tutorial.jsx';
 
 const INITIAL_DATA = {
   categories: [
@@ -45,8 +45,8 @@ const INITIAL_DATA = {
             {
               id: 'B-PWD-2401',
               formFactor: '2.5kg bag',
-              qty: 50,
-              buyInPrice: 12.50,
+              qty: 2.5,
+              buyInPrice: 2,
               locationId: 'LOC-001',
               attributes: { 'Manufacturing date': '2025-01-10', 'Production batch': 1 },
               highlightNew: false,
@@ -55,50 +55,7 @@ const INITIAL_DATA = {
                   id: 'TXN-PWD-2401-001',
                   type: 'buy-in',
                   timestamp: '2025-01-15T09:00:00.000Z',
-                  qtyChange: 50,
-                  reference: null,
-                },
-              ],
-            },
-            {
-              id: 'B-PWD-2402',
-              formFactor: '2.5kg bag',
-              qty: 25,
-              buyInPrice: 12.80,
-              locationId: 'LOC-001',
-              attributes: { 'Manufacturing date': '2025-02-05', 'Production batch': 2 },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-PWD-2402-001',
-                  type: 'buy-in',
-                  timestamp: '2025-02-10T09:00:00.000Z',
-                  qtyChange: 37.5,
-                  reference: null,
-                },
-                {
-                  id: 'TXN-PWD-2402-002',
-                  type: 'production-use',
-                  timestamp: '2025-02-20T14:00:00.000Z',
-                  qtyChange: -12.5,
-                  reference: 'PROD-001',
-                },
-              ],
-            },
-            {
-              id: 'B-PWD-2403',
-              formFactor: '2.5kg bag',
-              qty: 12.5,
-              buyInPrice: 13.00,
-              locationId: 'LOC-002',
-              attributes: { 'Manufacturing date': '2025-03-07', 'Production batch': 3 },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-PWD-2403-001',
-                  type: 'buy-in',
-                  timestamp: '2025-03-10T09:00:00.000Z',
-                  qtyChange: 12.5,
+                  qtyChange: 2.5,
                   reference: null,
                 },
               ],
@@ -116,49 +73,6 @@ const INITIAL_DATA = {
           formFactors: ['200L drum'],
           defaultFormFactor: '200L drum',
           lots: [
-            {
-              id: 'B-SLV-2401',
-              formFactor: '200L drum',
-              qty: 800,
-              buyInPrice: 1.20,
-              locationId: 'LOC-001',
-              attributes: { 'Manufacturing date': '2025-01-15' },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-SLV-2401-001',
-                  type: 'buy-in',
-                  timestamp: '2025-01-20T09:00:00.000Z',
-                  qtyChange: 800,
-                  reference: null,
-                },
-              ],
-            },
-            {
-              id: 'B-SLV-2402',
-              formFactor: '200L drum',
-              qty: 600,
-              buyInPrice: 1.15,
-              locationId: 'LOC-002',
-              attributes: { 'Manufacturing date': '2025-02-10' },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-SLV-2402-001',
-                  type: 'buy-in',
-                  timestamp: '2025-02-15T09:00:00.000Z',
-                  qtyChange: 1000,
-                  reference: null,
-                },
-                {
-                  id: 'TXN-SLV-2402-002',
-                  type: 'production-use',
-                  timestamp: '2025-02-25T14:00:00.000Z',
-                  qtyChange: -400,
-                  reference: 'PROD-002',
-                },
-              ],
-            },
             {
               id: 'B-SLV-2403',
               formFactor: '200L drum',
@@ -221,54 +135,11 @@ const INITIAL_DATA = {
           defaultFormFactor: '200L drum',
           lots: [
             {
-              id: 'B-MKR-D2401',
-              formFactor: '200L drum',
-              qty: 1000,
-              buyInPrice: 2.50,
-              locationId: 'LOC-001',
-              attributes: { 'Manufacturing date': '2025-01-20', 'blending batch': 1 },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-MKR-D2401-001',
-                  type: 'buy-in',
-                  timestamp: '2025-01-25T09:00:00.000Z',
-                  qtyChange: 1000,
-                  reference: null,
-                },
-              ],
-            },
-            {
-              id: 'B-MKR-D2402',
-              formFactor: '200L drum',
-              qty: 400,
-              buyInPrice: 2.45,
-              locationId: 'LOC-003',
-              attributes: { 'Manufacturing date': '2025-02-15', 'blending batch': 2 },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-MKR-D2402-001',
-                  type: 'buy-in',
-                  timestamp: '2025-02-20T09:00:00.000Z',
-                  qtyChange: 600,
-                  reference: null,
-                },
-                {
-                  id: 'TXN-MKR-D2402-002',
-                  type: 'production-use',
-                  timestamp: '2025-03-01T14:00:00.000Z',
-                  qtyChange: -200,
-                  reference: 'PROD-003',
-                },
-              ],
-            },
-            {
               id: 'B-MKR-B2401',
               formFactor: '1L bottle',
-              qty: 50,
+              qty: 1,
               buyInPrice: 3.20,
-              locationId: 'LOC-001',
+              locationId: 'LOC-003',
               attributes: { 'Manufacturing date': '2025-01-28', 'blending batch': 1 },
               highlightNew: false,
               transactions: [
@@ -276,7 +147,7 @@ const INITIAL_DATA = {
                   id: 'TXN-MKR-B2401-001',
                   type: 'buy-in',
                   timestamp: '2025-02-01T09:00:00.000Z',
-                  qtyChange: 50,
+                  qtyChange: 1,
                   reference: null,
                 },
               ],
@@ -284,7 +155,7 @@ const INITIAL_DATA = {
             {
               id: 'B-MKR-B2402',
               formFactor: '1L bottle',
-              qty: 30,
+              qty: 1,
               buyInPrice: 3.10,
               locationId: 'LOC-003',
               attributes: { 'Manufacturing date': '2025-02-25', 'blending batch': 2 },
@@ -300,27 +171,9 @@ const INITIAL_DATA = {
               ],
             },
             {
-              id: 'B-MKR-J2401',
-              formFactor: '5L Jerry can',
-              qty: 100,
-              buyInPrice: 2.80,
-              locationId: 'LOC-002',
-              attributes: { 'Manufacturing date': '2025-01-25', 'blending batch': 1 },
-              highlightNew: false,
-              transactions: [
-                {
-                  id: 'TXN-MKR-J2401-001',
-                  type: 'buy-in',
-                  timestamp: '2025-01-30T09:00:00.000Z',
-                  qtyChange: 100,
-                  reference: null,
-                },
-              ],
-            },
-            {
               id: 'B-MKR-J2402',
               formFactor: '5L Jerry can',
-              qty: 75,
+              qty: 5,
               buyInPrice: 2.75,
               locationId: 'LOC-003',
               attributes: { 'Manufacturing date': '2025-02-12', 'blending batch': 2 },
@@ -330,14 +183,14 @@ const INITIAL_DATA = {
                   id: 'TXN-MKR-J2402-001',
                   type: 'buy-in',
                   timestamp: '2025-02-15T09:00:00.000Z',
-                  qtyChange: 100,
+                  qtyChange: 10,
                   reference: null,
                 },
                 {
                   id: 'TXN-MKR-J2402-002',
                   type: 'production-use',
                   timestamp: '2025-03-05T14:00:00.000Z',
-                  qtyChange: -25,
+                  qtyChange: -5,
                   reference: 'PROD-004',
                 },
               ],
@@ -442,6 +295,8 @@ export default function App() {
   const [recipeBuilderState, setRecipeBuilderState] = useState(null); // { item, categoryId }
   const [managerActiveTab, setManagerActiveTab] = useState('itemFF');
   const [tutorialStep, setTutorialStep] = useState(null); // null = inactive, 0+ = active step
+  const [tutorialType, setTutorialType] = useState(null); // 'workflow' | 'setup' | null
+  const setupInitCounts = useRef(null); // baseline counts captured when Setup Tutorial starts
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -452,11 +307,43 @@ export default function App() {
   // ── Tutorial step advancement ───────────────────────────────────
   useEffect(() => {
     if (tutorialStep === null || tutorialStep === 0) return;
+    const advance = () => setTutorialStep(s => s + 1);
+
+    if (tutorialType === 'setup' && setupInitCounts.current) {
+      const init = setupInitCounts.current;
+      const ingr = data.categories.find(c => c.id === 'ingredients');
+      switch (tutorialStep) {
+        case 1: if (selectedCategoryId === '__uom') advance(); break;
+        // 2: showNext
+        case 3: if (data.uom.length > init.uomCount) advance(); break;
+        case 4: if (selectedCategoryId === '__locations') advance(); break;
+        case 5: if (activeModal?.type === 'addLocation') advance(); break;
+        case 6: if (data.locations.length > init.locationCount) advance(); break;
+        case 7: if (selectedCategoryId === 'ingredients') advance(); break;
+        case 8: if (managerActiveTab === 'formFactors') advance(); break;
+        case 9: if ((ingr?.formFactors?.length ?? 0) > init.ffCount) advance(); break;
+        case 10: if (managerActiveTab === 'items') advance(); break;
+        case 11: if (activeModal?.type === 'addItem') advance(); break;
+        case 12: if ((ingr?.items?.length ?? 0) > init.itemCount) advance(); break;
+        case 13: if (activeModal?.type === 'attachFormFactors') advance(); break;
+        // 14: showNext
+        case 15: if (managerActiveTab === 'schemas') advance(); break;
+        case 16: if (activeModal?.type === 'addSchema') advance(); break;
+        // 17: showNext
+        case 18: if (managerActiveTab === 'policies') advance(); break;
+        case 19: if (activeModal?.type === 'addPolicy') advance(); break;
+        // 20: showNext
+        case 21: if (managerActiveTab === 'itemFF') advance(); break;
+        default: break;
+      }
+      return;
+    }
+
+    // ── Workflow tutorial ──
     const ingredients = data.categories.find(c => c.id === 'ingredients');
     const powder = ingredients?.items.find(i => i.id === 'powder-001');
     const finishedGoods = data.categories.find(c => c.id === 'finished-goods');
     const marker = finishedGoods?.items.find(i => i.id === 'marker-001');
-    const advance = () => setTutorialStep(s => s + 1);
     switch (tutorialStep) {
       case 1: if (selectedCategoryId === 'ingredients') advance(); break;
       case 2: if (managerActiveTab === 'itemFF' && selectedCategoryId === 'ingredients') advance(); break;
@@ -492,7 +379,7 @@ export default function App() {
       case 29: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
-  }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
+  }, [tutorialStep, tutorialType, selectedCategoryId, managerActiveTab, activeModal, data]);
 
   // Reset managerActiveTab when category changes
   useEffect(() => {
@@ -1097,19 +984,46 @@ export default function App() {
         </div>
 
         {/* Tutorial launcher */}
-        <div className="ml-auto">
-          <button
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 border"
-            style={
-              tutorialStep !== null
-                ? { backgroundColor: '#6366F1', color: '#fff', borderColor: '#6366F1' }
-                : { backgroundColor: 'transparent', color: '#64748B', borderColor: '#E2E8F0' }
-            }
-            onClick={() => setTutorialStep(tutorialStep !== null ? null : 0)}
-          >
-            <BookOpen size={13} />
-            {tutorialStep !== null ? 'Exit Tutorial' : 'Tutorial'}
-          </button>
+        <div className="ml-auto flex items-center gap-2">
+          {tutorialStep !== null ? (
+            <button
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 border"
+              style={{ backgroundColor: '#6366F1', color: '#fff', borderColor: '#6366F1' }}
+              onClick={() => { setTutorialStep(null); setTutorialType(null); }}
+            >
+              <BookOpen size={13} />
+              Exit Tutorial
+            </button>
+          ) : (
+            <>
+              <button
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 border"
+                style={{ backgroundColor: 'transparent', color: '#64748B', borderColor: '#E2E8F0' }}
+                onClick={() => {
+                  const ingr = data.categories.find(c => c.id === 'ingredients');
+                  setupInitCounts.current = {
+                    uomCount: data.uom.length,
+                    locationCount: data.locations.length,
+                    ffCount: ingr?.formFactors?.length ?? 0,
+                    itemCount: ingr?.items?.length ?? 0,
+                  };
+                  setTutorialType('setup');
+                  setTutorialStep(0);
+                }}
+              >
+                <BookOpen size={13} />
+                Setup Tutorial
+              </button>
+              <button
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 border"
+                style={{ backgroundColor: 'transparent', color: '#64748B', borderColor: '#E2E8F0' }}
+                onClick={() => { setTutorialType('workflow'); setTutorialStep(0); }}
+              >
+                <BookOpen size={13} />
+                Workflow Tutorial
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -1245,10 +1159,11 @@ export default function App() {
       {/* Tutorial overlay */}
       {tutorialStep !== null && (
         <Tutorial
+          steps={tutorialType === 'setup' ? SETUP_TUTORIAL_STEPS : TUTORIAL_STEPS}
           stepIndex={tutorialStep}
           onNext={() => setTutorialStep(s => s + 1)}
           onBack={() => setTutorialStep(s => Math.max(1, s - 1))}
-          onSkip={() => setTutorialStep(null)}
+          onSkip={() => { setTutorialStep(null); setTutorialType(null); }}
         />
       )}
     </div>

@@ -79,7 +79,7 @@ export function UomSection({ uom, onUpdate }) {
           </table>
         </div>
         {adding && (
-          <div className="p-4 border-b border-slate-200 bg-indigo-50">
+          <div data-tutorial="uom-inline-form" className="p-4 border-b border-slate-200 bg-indigo-50">
             <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#6366F1' }}>New Unit</p>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex-1 min-w-[140px]">
