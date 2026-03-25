@@ -47,6 +47,8 @@ const INITIAL_DATA = {
               formFactor: '2.5kg bag',
               qty: 50,
               buyInPrice: 12.50,
+              locationId: 'LOC-001',
+              attributes: { 'Manufacturing date': '2025-01-10', 'Production batch': 1 },
               highlightNew: false,
               transactions: [
                 {
@@ -63,6 +65,8 @@ const INITIAL_DATA = {
               formFactor: '2.5kg bag',
               qty: 25,
               buyInPrice: 12.80,
+              locationId: 'LOC-001',
+              attributes: { 'Manufacturing date': '2025-02-05', 'Production batch': 2 },
               highlightNew: false,
               transactions: [
                 {
@@ -86,6 +90,8 @@ const INITIAL_DATA = {
               formFactor: '2.5kg bag',
               qty: 12.5,
               buyInPrice: 13.00,
+              locationId: 'LOC-002',
+              attributes: { 'Manufacturing date': '2025-03-07', 'Production batch': 3 },
               highlightNew: false,
               transactions: [
                 {
@@ -114,6 +120,8 @@ const INITIAL_DATA = {
               formFactor: '200L drum',
               qty: 800,
               buyInPrice: 1.20,
+              locationId: 'LOC-001',
+              attributes: { 'Manufacturing date': '2025-01-15' },
               highlightNew: false,
               transactions: [
                 {
@@ -130,6 +138,8 @@ const INITIAL_DATA = {
               formFactor: '200L drum',
               qty: 600,
               buyInPrice: 1.15,
+              locationId: 'LOC-002',
+              attributes: { 'Manufacturing date': '2025-02-10' },
               highlightNew: false,
               transactions: [
                 {
@@ -153,6 +163,8 @@ const INITIAL_DATA = {
               formFactor: '200L drum',
               qty: 200,
               buyInPrice: 1.25,
+              locationId: 'LOC-002',
+              attributes: { 'Manufacturing date': '2025-03-08' },
               highlightNew: false,
               transactions: [
                 {
@@ -211,6 +223,8 @@ const INITIAL_DATA = {
               formFactor: '200L drum',
               qty: 1000,
               buyInPrice: 2.50,
+              locationId: 'LOC-001',
+              attributes: { 'Manufacturing date': '2025-01-20', 'blending batch': 1 },
               highlightNew: false,
               transactions: [
                 {
@@ -227,6 +241,8 @@ const INITIAL_DATA = {
               formFactor: '200L drum',
               qty: 400,
               buyInPrice: 2.45,
+              locationId: 'LOC-003',
+              attributes: { 'Manufacturing date': '2025-02-15', 'blending batch': 2 },
               highlightNew: false,
               transactions: [
                 {
@@ -250,6 +266,8 @@ const INITIAL_DATA = {
               formFactor: '1L bottle',
               qty: 50,
               buyInPrice: 3.20,
+              locationId: 'LOC-001',
+              attributes: { 'Manufacturing date': '2025-01-28', 'blending batch': 1 },
               highlightNew: false,
               transactions: [
                 {
@@ -266,6 +284,8 @@ const INITIAL_DATA = {
               formFactor: '1L bottle',
               qty: 30,
               buyInPrice: 3.10,
+              locationId: 'LOC-003',
+              attributes: { 'Manufacturing date': '2025-02-25', 'blending batch': 2 },
               highlightNew: false,
               transactions: [
                 {
@@ -282,6 +302,8 @@ const INITIAL_DATA = {
               formFactor: '5L Jerry can',
               qty: 100,
               buyInPrice: 2.80,
+              locationId: 'LOC-002',
+              attributes: { 'Manufacturing date': '2025-01-25', 'blending batch': 1 },
               highlightNew: false,
               transactions: [
                 {
@@ -298,6 +320,8 @@ const INITIAL_DATA = {
               formFactor: '5L Jerry can',
               qty: 75,
               buyInPrice: 2.75,
+              locationId: 'LOC-003',
+              attributes: { 'Manufacturing date': '2025-02-12', 'blending batch': 2 },
               highlightNew: false,
               transactions: [
                 {
