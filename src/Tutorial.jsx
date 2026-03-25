@@ -643,6 +643,25 @@ export default function Tutorial({ stepIndex, onNext, onBack, onSkip }) {
     return (
       <>
         <Confetti />
+        <img
+          src="/celebration.png"
+          alt=""
+          style={{
+            position: 'fixed', bottom: 0, left: 0,
+            height: 320, width: 'auto',
+            zIndex: 9999, pointerEvents: 'none',
+          }}
+        />
+        <img
+          src="/celebration.png"
+          alt=""
+          style={{
+            position: 'fixed', bottom: 0, right: 0,
+            height: 320, width: 'auto',
+            zIndex: 9999, pointerEvents: 'none',
+            transform: 'scaleX(-1)',
+          }}
+        />
         <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9997, backgroundColor: 'rgba(0,0,0,0.6)' }}>
           <div
             className="bg-white rounded-2xl p-8 mx-4 shadow-2xl text-center"
