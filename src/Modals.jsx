@@ -1177,15 +1177,56 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
 
 // ── ExecutionModal ────────────────────────────────────────────────
 
-export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
-  const initialSourceLocationIds = {};
-  (recipe?.sources || []).forEach((_, idx) => { initialSourceLocationIds[idx] = ''; });
+const makeRowId = () => Math.random().toString(36).slice(2, 8);
 
-  const [sourceLocationIds, setSourceLocationIds] = useState(initialSourceLocationIds);
-  const [destLocationId, setDestLocationId] = useState('');
-  const [multiplier, setMultiplier] = useState(1);
+export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
+  const initSegments = () =>
+    Object.fromEntries((recipe?.sources || []).map(src => [
+      src.id,
+      [{ id: makeRowId(), lotId: '', qtyToUse: 0 }],
+    ]));
+
+  const [locationId, setLocationId] = useState('');
+  const [sourceRowsBySegment, setSourceRowsBySegment] = useState(initSegments);
+  const [destRows, setDestRows] = useState([{ id: makeRowId(), qty: '' }]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Attribute schema for output form factor
+  const outputSchema = React.useMemo(() => {
+    if (!recipe?.output?.formFactor) return null;
+    for (const cat of data.categories) {
+      if (!cat.items.some(i => i.id === item?.id)) continue;
+      return cat.attributeSchemas?.find(
+        s => s.itemId === item.id && s.formFactor === recipe.output.formFactor
+      ) || null;
+    }
+    return null;
+  }, [data, item, recipe]);
+
+  const [attrValues, setAttrValues] = useState({});
+  const handleAttrChange = (fieldName, value) =>
+    setAttrValues(prev => ({ ...prev, [fieldName]: value }));
+
+  // Per-segment selectable lots
+  const selectableLotsPerSrc = React.useMemo(() => {
+    if (!locationId) return {};
+    const result = {};
+    for (const src of (recipe?.sources || [])) {
+      result[src.id] = [];
+      for (const cat of data.categories) {
+        for (const itm of cat.items) {
+          if (itm.id !== src.itemId) continue;
+          for (const lot of itm.lots) {
+            if (lot.locationId !== locationId || lot.formFactor !== src.formFactor) continue;
+            result[src.id].push({ lotId: lot.id, itemName: itm.name, formFactor: lot.formFactor, qty: lot.qty });
+          }
+        }
+      }
+    }
+    return result;
+  }, [locationId, recipe, data]);
+
+  // Item name lookup for segment headers
   const getItemName = (itemId) => {
     for (const cat of data.categories) {
       const found = cat.items.find(i => i.id === itemId);
@@ -1194,177 +1235,279 @@ export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
     return itemId;
   };
 
-  const allSourcesSelected = (recipe?.sources || []).every((_, idx) => !!sourceLocationIds[idx]);
+  // Per-segment source row helpers
+  const updateSrcRow = (srcId, rowId, patch) =>
+    setSourceRowsBySegment(prev => ({
+      ...prev,
+      [srcId]: prev[srcId].map(r => r.id === rowId ? { ...r, ...patch } : r),
+    }));
+
+  const addSrcRow = (srcId) =>
+    setSourceRowsBySegment(prev => ({
+      ...prev,
+      [srcId]: [...prev[srcId], { id: makeRowId(), lotId: '', qtyToUse: 0 }],
+    }));
+
+  const removeSrcRow = (srcId, rowId) =>
+    setSourceRowsBySegment(prev => ({
+      ...prev,
+      [srcId]: prev[srcId].filter(r => r.id !== rowId),
+    }));
+
+  // Dest row helpers
+  const updateDestRow = (rowId, qty) =>
+    setDestRows(prev => prev.map(r => r.id === rowId ? { ...r, qty } : r));
+
+  const addDestRow = () =>
+    setDestRows(prev => [...prev, { id: makeRowId(), qty: '' }]);
+
+  const removeDestRow = (rowId) =>
+    setDestRows(prev => prev.filter(r => r.id !== rowId));
+
+  const canSubmit =
+    locationId &&
+    Object.values(sourceRowsBySegment).flat().some(r => r.lotId && r.qtyToUse > 0) &&
+    destRows.some(r => parseInt(r.qty, 10) > 0);
 
   const handleExecute = () => {
-    if (!allSourcesSelected || !destLocationId || mult < 1) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     setTimeout(() => {
-      const newBatchId = 'LOT-' + Date.now().toString(36);
-      const buyInTxn = {
-        id: 'TXN-' + Date.now(),
-        type: 'buy-in',
-        timestamp: new Date().toISOString(),
-        qtyChange: recipe.output.qty * mult,
-        reference: null,
-      };
-      const newLot = {
-        id: newBatchId,
-        formFactor: recipe.output.formFactor,
-        qty: recipe.output.qty * mult,
-        buyInPrice: 0,
-        highlightNew: true,
-        transactions: [buyInTxn],
-      };
+      const now = Date.now();
+      const newLots = destRows
+        .filter(r => parseInt(r.qty, 10) > 0)
+        .map((r, i) => {
+          const batchId = 'LOT-' + now.toString(36) + '-' + r.id;
+          return {
+            id: batchId,
+            formFactor: recipe.output.formFactor,
+            qty: parseInt(r.qty, 10),
+            buyInPrice: 0,
+            locationId,
+            attributes: { ...attrValues },
+            highlightNew: true,
+            transactions: [{
+              id: `TXN-${now}-dest-${i}`,
+              type: 'buy-in',
+              timestamp: new Date().toISOString(),
+              qtyChange: parseInt(r.qty, 10),
+              reference: null,
+            }],
+          };
+        });
+
       onExecute({
-        recipe,
-        sourceLocationIds,
-        destLocationId,
-        multiplier: mult,
-        newBatchId,
-        newLot,
+        locationId,
+        sourceLotUsages: Object.values(sourceRowsBySegment).flat()
+          .filter(r => r.lotId && r.qtyToUse > 0)
+          .map(r => ({ lotId: r.lotId, qtyToUse: r.qtyToUse })),
+        newLots,
       });
       setSubmitting(false);
     }, 200);
   };
 
-  const mult = parseInt(multiplier, 10) || 1;
-
   return (
     <ModalShell title={`Produce — ${item?.name}`} onClose={onClose}>
-      {/* Read-only item + recipe info */}
-      <div
-        className="rounded-xl p-4 mb-5"
-        style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}
-      >
-        <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#94A3B8' }}>
-          Item
-        </p>
-        <p className="text-sm font-semibold mb-0.5" style={{ color: '#1E1B4B' }}>{item?.name}</p>
-        <p className="text-xs font-mono" style={{ color: '#64748B' }}>{item?.sku}</p>
-        <div className="mt-3 pt-3 border-t border-slate-200">
-          <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>Recipe</p>
-          <p className="text-sm font-semibold" style={{ color: '#6366F1' }}>{recipe?.name}</p>
-        </div>
-      </div>
-
-      {/* Recipe summary */}
-      <div
-        className="rounded-xl p-4 mb-5"
-        style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}
-      >
-        <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
-          Recipe Summary
-        </p>
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <p className="text-xs font-semibold mb-1.5" style={{ color: '#10B981' }}>Sources</p>
-            {recipe?.sources.map((src, idx) => (
-              <div key={idx} className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
-                <span className="font-medium">{getItemName(src.itemId)}</span>
-                <span style={{ color: '#64748B' }}> — {src.formFactor}</span>
-                <span className="ml-1.5 font-semibold" style={{ color: '#6366F1' }}>×{src.qty}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex-shrink-0 pt-4">
-            <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-              <path d="M0 8h16M10 2l8 6-8 6" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-
-          <div className="flex-1">
-            <p className="text-xs font-semibold mb-1.5" style={{ color: '#6366F1' }}>Output</p>
-            {recipe?.output && (
-              <div className="text-xs mb-1" style={{ color: '#1E1B4B' }}>
-                <span className="font-medium">{item?.name}</span>
-                <span style={{ color: '#64748B' }}> — {recipe.output.formFactor}</span>
-                <span className="ml-1.5 font-semibold" style={{ color: '#6366F1' }}>×{recipe.output.qty}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Per-source warehouse dropdowns */}
-      {recipe?.sources.map((src, idx) => (
-        <FormField
-          key={idx}
-          label={`Source for ${getItemName(src.itemId)} — ${src.formFactor}`}
-          required
+      {/* Location selector */}
+      <FormField label="Location" required>
+        <SelectInput
+          value={locationId}
+          onChange={e => {
+            setLocationId(e.target.value);
+            setSourceRowsBySegment(initSegments());
+          }}
         >
-          <SelectInput
-            value={sourceLocationIds[idx] || ''}
-            onChange={e => setSourceLocationIds(prev => ({ ...prev, [idx]: e.target.value }))}
-          >
-            <option value="">Select source location...</option>
-            {data.locations.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
-            ))}
-          </SelectInput>
-        </FormField>
-      ))}
-
-      <FormField label="Destination Location" required>
-        <SelectInput value={destLocationId} onChange={e => setDestLocationId(e.target.value)}>
-          <option value="">Select destination location...</option>
+          <option value="">Select location…</option>
           {data.locations.map(loc => (
             <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
           ))}
         </SelectInput>
       </FormField>
 
-      <FormField label="Multiplier" required hint="Multiply all quantities by this factor">
-        <NumberInput
-          value={multiplier}
-          onChange={e => setMultiplier(e.target.value)}
-          placeholder="1"
-          min="1"
-          step="1"
-        />
-      </FormField>
-
-      {/* Reactive preview */}
-      {mult >= 1 && (
-        <div
-          className="rounded-xl p-4 mb-2"
-          style={{ backgroundColor: '#EEF2FF', border: '1px solid #C7D2FE' }}
-        >
-          <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#6366F1' }}>
-            Effective Quantities (×{mult})
-          </p>
-          <div className="space-y-1.5">
-            <p className="text-xs font-semibold" style={{ color: '#64748B' }}>Sources consumed:</p>
-            {recipe?.sources.map((src, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
-                <span style={{ color: '#1E1B4B' }}>{src.formFactor}</span>
-                <span className="font-semibold" style={{ color: '#EF4444' }}>
-                  -{(src.qty * mult).toLocaleString()}
-                </span>
+      {/* Sources section — one segment per recipe source */}
+      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+          Sources
+        </p>
+        {(recipe?.sources || []).map((src, srcIdx) => {
+          const lotsForSrc = selectableLotsPerSrc[src.id] || [];
+          const rows = sourceRowsBySegment[src.id] || [];
+          return (
+            <div key={src.id} className={srcIdx > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#1E1B4B' }}>
+                {getItemName(src.itemId)}
+                <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
+              </p>
+              <div className="space-y-3">
+                {rows.map(row => {
+                  const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
+                  const maxQty = lotInfo?.qty ?? 0;
+                  return (
+                    <div key={row.id} className="rounded-lg p-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex-1">
+                          <SelectInput
+                            value={row.lotId}
+                            onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
+                          >
+                            <option value="">Select lot…</option>
+                            {lotsForSrc.map(l => (
+                              <option key={l.lotId} value={l.lotId}>
+                                {l.lotId} — {l.qty} avail
+                              </option>
+                            ))}
+                          </SelectInput>
+                        </div>
+                        {rows.length > 1 && (
+                          <button
+                            onClick={() => removeSrcRow(src.id, row.id)}
+                            className="p-1 rounded hover:bg-red-50"
+                            style={{ color: '#EF4444' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      {row.lotId && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs w-4 text-right" style={{ color: '#94A3B8' }}>0</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={maxQty}
+                            value={row.qtyToUse}
+                            onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseInt(e.target.value, 10) })}
+                            className="flex-1"
+                          />
+                          <span className="text-xs w-8 text-left" style={{ color: '#94A3B8' }}>{maxQty}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={maxQty}
+                            value={row.qtyToUse}
+                            onChange={e => {
+                              const v = Math.min(maxQty, Math.max(0, parseInt(e.target.value, 10) || 0));
+                              updateSrcRow(src.id, row.id, { qtyToUse: v });
+                            }}
+                            className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
+                            style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
+                          />
+                          <button
+                            onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
+                            className="text-xs px-2 py-1 rounded-lg font-semibold"
+                            style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
+                          >
+                            MAX
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+              <button
+                onClick={() => addSrcRow(src.id)}
+                disabled={!locationId}
+                className="mt-2 flex items-center gap-1 text-xs font-medium disabled:opacity-40"
+                style={{ color: '#6366F1' }}
+              >
+                <Plus size={12} /> Add Lot
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Destination section */}
+      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+          Destination
+        </p>
+
+        {/* Attribute fields — above qty rows */}
+        {outputSchema && outputSchema.fields.length > 0 && (
+          <div className="mb-4">
+            <div className="rounded-lg p-3 mb-3 text-xs font-medium"
+                 style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
+              Attributes — {recipe.output.formFactor}
+            </div>
+            {outputSchema.fields.map(field => (
+              <FormField key={field.name} label={field.name} required={field.required}>
+                {field.type === 'boolean' ? (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={!!attrValues[field.name]}
+                      onChange={e => handleAttrChange(field.name, e.target.checked)} />
+                    <span className="text-sm" style={{ color: '#1E1B4B' }}>
+                      {attrValues[field.name] ? 'Yes' : 'No'}
+                    </span>
+                  </label>
+                ) : field.type === 'date' ? (
+                  <input type="date" value={attrValues[field.name] || ''}
+                    onChange={e => handleAttrChange(field.name, e.target.value)}
+                    className="w-full rounded-lg px-3 py-2 text-sm"
+                    style={{ border: '1px solid #E2E8F0' }} />
+                ) : field.type === 'number' ? (
+                  <NumberInput value={attrValues[field.name] || ''}
+                    onChange={e => handleAttrChange(field.name, e.target.value)} />
+                ) : (
+                  <TextInput value={attrValues[field.name] || ''}
+                    onChange={e => handleAttrChange(field.name, e.target.value)} />
+                )}
+              </FormField>
             ))}
-            <div className="border-t border-indigo-200 mt-2 pt-2">
-              <p className="text-xs font-semibold" style={{ color: '#64748B' }}>Output created:</p>
-              {recipe?.output && (
-                <div className="flex items-center justify-between text-xs mt-1">
-                  <span style={{ color: '#1E1B4B' }}>{recipe.output.formFactor}</span>
-                  <span className="font-semibold" style={{ color: '#10B981' }}>
-                    +{(recipe.output.qty * mult).toLocaleString()}
-                  </span>
-                </div>
+          </div>
+        )}
+        {!outputSchema && recipe?.output?.formFactor && (
+          <div className="rounded-lg px-3 py-2 text-xs mb-3"
+               style={{ backgroundColor: '#FEF9C3', color: '#854D0E' }}>
+            No attribute schema defined for {recipe.output.formFactor}.
+          </div>
+        )}
+
+        {/* Qty rows */}
+        <div className="space-y-2">
+          {destRows.map((row) => (
+            <div key={row.id} className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <span className="text-xs" style={{ color: '#64748B' }}>Qty:</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={row.qty}
+                  onChange={e => updateDestRow(row.id, e.target.value)}
+                  placeholder="0"
+                  className="flex-1 text-sm font-mono bg-transparent outline-none"
+                  style={{ color: '#1E1B4B' }}
+                />
+              </div>
+              {destRows.length > 1 && (
+                <button
+                  onClick={() => removeDestRow(row.id)}
+                  className="p-1 rounded hover:bg-red-50"
+                  style={{ color: '#EF4444' }}
+                >
+                  <Trash2 size={14} />
+                </button>
               )}
             </div>
-          </div>
+          ))}
         </div>
-      )}
+        <button
+          onClick={addDestRow}
+          className="mt-2 flex items-center gap-1 text-xs font-medium"
+          style={{ color: '#6366F1' }}
+        >
+          <Plus size={12} /> Add Destination Lot
+        </button>
+      </div>
 
       <SubmitButton
         loading={submitting}
         onClick={handleExecute}
-        disabled={!allSourcesSelected || !destLocationId || mult < 1}
+        disabled={!canSubmit}
       >
-        Confirm Produce
+        Produce
       </SubmitButton>
     </ModalShell>
   );

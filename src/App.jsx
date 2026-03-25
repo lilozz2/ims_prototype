@@ -775,60 +775,48 @@ export default function App() {
     showToast('Recipe deleted', 'success');
   }, [showToast]);
 
-  const handleExecuteRecipe = useCallback(({ categoryId, item, recipe, sourceLocationIds, destLocationId, multiplier, newBatchId, newLot }) => {
+  const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots }) => {
     setData(prev => {
       let newData = { ...prev, categories: prev.categories.map(cat => ({ ...cat, items: cat.items.map(i => ({ ...i, lots: [...i.lots] })) })) };
 
-      // Deduct source lots FIFO per source
-      recipe.sources.forEach((src, srcIndex) => {
-        const consumeQty = src.qty * multiplier;
-        let remaining = consumeQty;
-        const newBatchIdRef = newBatchId;
-        newData.categories = newData.categories.map(cat =>
-          cat.id !== categoryId ? cat : {
-            ...cat,
-            items: cat.items.map(i =>
-              i.id !== src.itemId ? i : {
-                ...i,
-                lots: i.lots.map(lot => {
-                  if (remaining <= 0 || lot.formFactor !== src.formFactor) return lot;
-                  const deduct = Math.min(lot.qty, remaining);
-                  remaining -= deduct;
-                  const productionTxn = {
-                    id: `TXN-${Date.now()}-${srcIndex}`,
-                    type: 'production-use',
-                    timestamp: new Date().toISOString(),
-                    qtyChange: -deduct,
-                    reference: newBatchIdRef,
-                  };
-                  return {
-                    ...lot,
-                    qty: lot.qty - deduct,
-                    transactions: [...(lot.transactions || []), productionTxn],
-                  };
-                }),
-              }
-            ),
-          }
-        );
+      // Deduct each explicitly chosen source lot
+      sourceLotUsages.forEach((usage, idx) => {
+        const ref = newLots[0]?.id || 'PROD-' + Date.now();
+        newData.categories = newData.categories.map(cat => ({
+          ...cat,
+          items: cat.items.map(i => ({
+            ...i,
+            lots: i.lots.map(lot => {
+              if (lot.id !== usage.lotId) return lot;
+              return {
+                ...lot,
+                qty: lot.qty - usage.qtyToUse,
+                transactions: [...(lot.transactions || []), {
+                  id: `TXN-${Date.now()}-${idx}`,
+                  type: 'production-use',
+                  timestamp: new Date().toISOString(),
+                  qtyChange: -usage.qtyToUse,
+                  reference: ref,
+                }],
+              };
+            }),
+          })),
+        }));
       });
 
-      // Add the new output lot
+      // Add new output lots
       newData.categories = newData.categories.map(cat =>
         cat.id !== categoryId ? cat : {
           ...cat,
           items: cat.items.map(i =>
-            i.id !== item.id ? i : {
-              ...i,
-              lots: [...i.lots, newLot],
-            }
+            i.id !== item.id ? i : { ...i, lots: [...i.lots, ...newLots] }
           ),
         }
       );
 
       return newData;
     });
-    showToast(`Production complete. Lot ${newBatchId} created.`, 'success');
+    showToast(`Production complete. ${newLots.length} lot(s) created.`, 'success');
     closeModal();
   }, [showToast, closeModal]);
 
