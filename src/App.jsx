@@ -145,7 +145,7 @@ const INITIAL_DATA = {
               transactions: [
                 {
                   id: 'TXN-MKR-B2401-001',
-                  type: 'buy-in',
+                  type: 'draw-down',
                   timestamp: '2025-02-01T09:00:00.000Z',
                   qtyChange: 1,
                   reference: null,
@@ -163,9 +163,9 @@ const INITIAL_DATA = {
               transactions: [
                 {
                   id: 'TXN-MKR-B2402-001',
-                  type: 'buy-in',
+                  type: 'draw-down',
                   timestamp: '2025-03-01T09:00:00.000Z',
-                  qtyChange: 30,
+                  qtyChange: 1,
                   reference: null,
                 },
               ],
@@ -181,7 +181,7 @@ const INITIAL_DATA = {
               transactions: [
                 {
                   id: 'TXN-MKR-J2402-001',
-                  type: 'buy-in',
+                  type: 'draw-down',
                   timestamp: '2025-02-15T09:00:00.000Z',
                   qtyChange: 10,
                   reference: null,
