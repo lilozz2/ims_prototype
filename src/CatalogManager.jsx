@@ -792,7 +792,7 @@ function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
 
 // ── CatalogManager (main) ─────────────────────────────────────────
 
-export default function CatalogManager({ data, selectedCategoryId, onUpdate, onOpenModal, activeTab = 'items', onTabChange }) {
+export default function CatalogManager({ data, selectedCategoryId, onUpdate, onOpenModal, activeTab = 'itemsFF', onTabChange }) {
   const setActiveTab = onTabChange ?? (() => {});
   const category = data.categories.find(c => c.id === selectedCategoryId);
 

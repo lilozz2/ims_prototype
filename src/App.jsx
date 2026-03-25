@@ -440,7 +440,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [recipeBuilderState, setRecipeBuilderState] = useState(null); // { item, categoryId }
-  const [managerActiveTab, setManagerActiveTab] = useState('items');
+  const [managerActiveTab, setManagerActiveTab] = useState('itemFF');
   const [tutorialStep, setTutorialStep] = useState(null); // null = inactive, 0+ = active step
 
   const showToast = useCallback((message, type = 'success') => {
@@ -485,7 +485,7 @@ export default function App() {
 
   // Reset managerActiveTab when category changes
   useEffect(() => {
-    setManagerActiveTab('items');
+    setManagerActiveTab('itemFF');
   }, [selectedCategoryId]);
 
   const openModal = useCallback((type, payload = {}) => {
@@ -982,6 +982,7 @@ export default function App() {
         <RecipeBuilder
           item={payload.item}
           initialRecipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
+          outputFormFactor={payload.formFactor}
           data={data}
           onSave={(recipe) => handleSaveRecipe(payload.item.id, payload.formFactor, recipe)}
           onClose={closeModal}

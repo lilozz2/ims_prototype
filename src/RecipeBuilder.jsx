@@ -149,7 +149,7 @@ function DestNodePopover({ node, item, onSave, onClose }) {
   }, []);
 
   const handleSave = () => {
-    if (!formFactor || qty < 1) return;
+    if (qty < 1) return;
     onSave({
       formFactor,
       qty: parseInt(qty, 10),
@@ -190,18 +190,13 @@ function DestNodePopover({ node, item, onSave, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Form Factor</label>
-          <select
-            className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-            style={{ borderColor: '#E2E8F0' }}
-            value={formFactor}
-            onChange={e => setFormFactor(e.target.value)}
+          <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Form Factor (fixed)</label>
+          <div
+            className="w-full px-3 py-2 rounded-lg border text-sm"
+            style={{ borderColor: '#E2E8F0', backgroundColor: '#F8FAFC', color: '#94A3B8' }}
           >
-            <option value="">Select form factor...</option>
-            {item.formFactors.map(ff => (
-              <option key={ff} value={ff}>{ff}</option>
-            ))}
-          </select>
+            {formFactor}
+          </div>
         </div>
 
         <div>
@@ -222,7 +217,7 @@ function DestNodePopover({ node, item, onSave, onClose }) {
             className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
             style={{ backgroundColor: '#6366F1', color: '#fff' }}
             onClick={handleSave}
-            disabled={!formFactor || !qty}
+            disabled={!qty}
           >
             <Check size={14} className="inline mr-1" />
             Save
@@ -386,10 +381,12 @@ function DestinationCard({ output, item, data, onEdit }) {
 
 // ── RecipeBuilder (main) ──────────────────────────────────────────
 
-export default function RecipeBuilder({ item, initialRecipe, data, onSave, onClose }) {
+export default function RecipeBuilder({ item, initialRecipe, outputFormFactor, data, onSave, onClose }) {
   const recipeName = item.name + ' recipe';
   const [sources, setSources] = useState(initialRecipe?.sources || []);
-  const [output, setOutput] = useState(initialRecipe?.output || null);
+  const [output, setOutput] = useState(
+    initialRecipe?.output || (outputFormFactor ? { formFactor: outputFormFactor, qty: 1 } : null)
+  );
 
   const canSave = sources.length >= 1 && output !== null;
 
