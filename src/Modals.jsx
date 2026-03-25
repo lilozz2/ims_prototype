@@ -314,14 +314,16 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
         <ReadOnlyField value={formFactor} />
       </FormField>
 
-      <FormField label="Location" required>
-        <SelectInput value={locationId} onChange={e => setLocationId(e.target.value)}>
-          <option value="">Select location...</option>
-          {(locations || []).map(loc => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
-        </SelectInput>
-      </FormField>
+      <div data-tutorial="purchase-modal-location">
+        <FormField label="Location" required>
+          <SelectInput value={locationId} onChange={e => setLocationId(e.target.value)}>
+            <option value="">Select location...</option>
+            {(locations || []).map(loc => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+          </SelectInput>
+        </FormField>
+      </div>
 
       {/* Dynamic attribute fields */}
       {loadingSchema && (
@@ -338,7 +340,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       )}
 
       {!loadingSchema && schema && schema.fields.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4" data-tutorial="purchase-modal-attributes">
           <div
             className="rounded-lg p-3 mb-3 text-xs font-medium"
             style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
@@ -396,7 +398,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       )}
 
       {/* Lot entries */}
-      <div className="border-t border-slate-100 pt-4 mt-2">
+      <div className="border-t border-slate-100 pt-4 mt-2" data-tutorial="purchase-modal-lots">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-medium" style={{ color: '#1E1B4B' }}>Lots</span>
           <span

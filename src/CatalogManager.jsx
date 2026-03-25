@@ -581,43 +581,6 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
           {ffLots.length} lot{ffLots.length !== 1 ? 's' : ''}
         </span>
         <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          {selectedLotIds.size > 0 && (
-            <div className="relative">
-              {batchMenuOpen && (
-                <div className="fixed inset-0 z-[9]" onClick={() => setBatchMenuOpen(false)} />
-              )}
-              <button
-                onClick={() => setBatchMenuOpen(v => !v)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#6366F1', color: '#fff' }}
-                data-tutorial="batch-actions-btn"
-              >
-                Batch Actions ({selectedLotIds.size}) <ChevronDown size={12} />
-              </button>
-              {batchMenuOpen && (
-                <div className="absolute right-0 mt-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
-                     style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}>
-                  <button
-                    className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
-                    style={{ color: '#1E1B4B' }}
-                    onClick={() => {
-                      setBatchMenuOpen(false);
-                      const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
-                      onOpenModal('batchMove', {
-                        categoryId: category.id,
-                        item,
-                        lotIds: [...selectedLotIds],
-                        lots: selectedLots,
-                        onMoved: () => setSelectedLotIds(new Set()),
-                      });
-                    }}
-                  >
-                    Move
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
           {(() => {
             const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
             const ffRecipe = item.formFactorRecipes?.[ffName] || null;
@@ -760,13 +723,60 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                     )}
                     {lot.buyInPrice > 0 && (
                       <span className="text-xs" style={{ color: '#94A3B8' }}>
-                        ${lot.buyInPrice.toFixed(2)}
+                        ${(lot.buyInPrice * (lot.qty || 0)).toFixed(2)}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
             ))
+          )}
+          {selectedLotIds.size > 0 && (
+            <div
+              className="flex items-center justify-between px-4 py-2 border-t"
+              style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}
+            >
+              <span className="text-xs font-medium" style={{ color: '#4F46E5' }}>
+                {selectedLotIds.size} lot{selectedLotIds.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="relative">
+                {batchMenuOpen && (
+                  <div className="fixed inset-0 z-[9]" onClick={() => setBatchMenuOpen(false)} />
+                )}
+                <button
+                  onClick={() => setBatchMenuOpen(v => !v)}
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-semibold"
+                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  data-tutorial="batch-actions-btn"
+                >
+                  Batch Actions <ChevronDown size={12} />
+                </button>
+                {batchMenuOpen && (
+                  <div
+                    className="absolute right-0 bottom-full mb-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
+                    style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}
+                  >
+                    <button
+                      className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
+                      style={{ color: '#1E1B4B' }}
+                      onClick={() => {
+                        setBatchMenuOpen(false);
+                        const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
+                        onOpenModal('batchMove', {
+                          categoryId: category.id,
+                          item,
+                          lotIds: [...selectedLotIds],
+                          lots: selectedLots,
+                          onMoved: () => setSelectedLotIds(new Set()),
+                        });
+                      }}
+                    >
+                      Move
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}

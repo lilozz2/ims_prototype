@@ -75,12 +75,12 @@ export const TUTORIAL_STEPS = [
     title: 'Welcome to the IMS',
     description: "This tutorial walks you through the core inventory workflow.",
     bullets: [
-      'Purchase ingredients into a warehouse',
-      'Batch move lots to another location',
-      'Set up a production recipe',
-      'Produce finished goods',
-      'Draw down into smaller units',
-      'Track full transaction history',
+      '🛒 Purchase ingredients into a warehouse',
+      '🚚 Batch move lots to another location',
+      '📋 Set up a production recipe',
+      '🏭 Produce finished goods',
+      '🧪 Draw down into smaller units',
+      '📊 Track full transaction history',
     ],
   },
   // 1
@@ -115,34 +115,56 @@ export const TUTORIAL_STEPS = [
   },
   // 4
   {
-    id: 'fill-purchase-form',
-    type: 'corner',
-    title: 'Fill in the Purchase Form',
-    description: 'Enter quantity 3, set the location to SG Warehouse. Submit when done.',
-    instruction: 'Fill the form and click Create Lots',
+    id: 'purchase-location',
+    type: 'spotlight',
+    target: '[data-tutorial="purchase-modal-location"]',
+    position: 'left',
+    title: 'Set the Location',
+    description: 'Choose where these lots will be stored.',
+    instruction: 'Select "SG Warehouse" from the dropdown',
+    showNext: true,
   },
   // 5
   {
-    id: 'select-purchased-lots',
+    id: 'purchase-attributes',
     type: 'spotlight',
-    target: '[data-tutorial="lot-area-powder-bag"]',
-    position: 'top',
-    title: 'Select the Purchased Lots',
-    description: 'Use the checkboxes to select the powder lots you just purchased. The Batch Actions button will appear in the header row.',
-    instruction: 'Select the lots, then click Next',
+    target: '[data-tutorial="purchase-modal-attributes"]',
+    position: 'left',
+    title: 'Fill in Attribute Fields',
+    description: "These attributes are shared across all lots you're about to create.",
+    bullets: [
+      "Manufacturing date: today's date",
+      'Production batch: 1',
+    ],
+    instruction: 'Enter the values above, then click Next',
     showNext: true,
   },
   // 6
   {
-    id: 'batch-actions-move',
+    id: 'purchase-lots',
     type: 'spotlight',
-    target: '[data-tutorial="batch-actions-btn"]',
-    position: 'top',
-    title: 'Batch Actions → Move',
-    description: 'Click Batch Actions, then choose Move. This lets you relocate multiple lots at once.',
-    instruction: 'Click "Batch Actions" → "Move"',
+    target: '[data-tutorial="purchase-modal-lots"]',
+    position: 'left',
+    title: 'Create 3 Lots',
+    description: 'Each row is a separate lot. Use "Add Another" to add more rows.',
+    bullets: [
+      'Add 3 rows (one per lot)',
+      'Quantity per lot: 2.5',
+      'Price per lot: $5.00',
+    ],
+    instruction: 'Fill in all 3 rows, then click Purchase Lots',
   },
   // 7
+  {
+    id: 'select-and-move',
+    type: 'spotlight',
+    target: '[data-tutorial="lot-area-powder-bag"]',
+    position: 'top',
+    title: 'Select Lots & Batch Move',
+    description: 'Use the checkboxes to select the powder lots. The Batch Actions button will appear in the header — click it, then choose Move.',
+    instruction: 'Select lots → Batch Actions → Move',
+  },
+  // 8
   {
     id: 'move-to-uskun',
     type: 'corner',
@@ -150,7 +172,7 @@ export const TUTORIAL_STEPS = [
     description: 'Select Uskun Warehouse as the destination and confirm.',
     instruction: 'Set the destination to Uskun Warehouse and click Move Lots',
   },
-  // 8
+  // 9
   {
     id: 'navigate-to-finished-goods',
     type: 'spotlight',
@@ -160,7 +182,7 @@ export const TUTORIAL_STEPS = [
     description: 'Now navigate to Finished Goods to work with Marker Solution.',
     instruction: 'Click "Finished Goods" in the sidebar',
   },
-  // 9
+  // 10
   {
     id: 'create-production-recipe',
     type: 'spotlight',
@@ -170,7 +192,7 @@ export const TUTORIAL_STEPS = [
     description: 'Marker Solution (200L Drum) is manufactured from powder and solvent. Click Create Recipe to define the formula.',
     instruction: 'Click "Create Recipe" on the Marker Solution (200L drum) row',
   },
-  // 10
+  // 11
   {
     id: 'define-recipe',
     type: 'corner',
@@ -183,7 +205,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: 'Add both sources, set output qty to 22, then Save',
   },
-  // 11
+  // 12
   {
     id: 'produce-marker',
     type: 'spotlight',
@@ -193,40 +215,54 @@ export const TUTORIAL_STEPS = [
     description: 'Your recipe is saved. Click Produce to start a production run for Marker Solution.',
     instruction: 'Click "Produce" on the Marker Solution (200L drum) row',
   },
-  // 12
+  // 13
   {
     id: 'sources-section',
     type: 'spotlight',
     target: '[data-tutorial="exec-sources-section"]',
-    position: 'right',
-    title: 'Sources Section',
-    description: 'This section is split by ingredient. Each segment shows lots at your selected location that match that ingredient. Select a lot and use the slider to set how much to consume.',
-    instruction: 'Click Next to continue',
-    showNext: true,
-  },
-  // 13
-  {
-    id: 'destination-section',
-    type: 'spotlight',
-    target: '[data-tutorial="exec-destination-section"]',
-    position: 'right',
-    title: 'Destination Section',
-    description: 'Define the lots you want to create. Add as many rows as needed — each row becomes a separate lot. Attribute fields (if any) apply to all destination lots.',
-    instruction: 'Click Next to continue',
+    position: 'left',
+    title: 'Fill in Sources',
+    description: 'Select a lot and enter the qty for each ingredient segment.',
+    bullets: [
+      'Powder (2.5kg bag): select any lot → qty 5',
+      'Solvent (200L drum): select any lot → qty 20',
+    ],
+    instruction: 'Select lots and set quantities, then click Next',
     showNext: true,
   },
   // 14
   {
-    id: 'status-section',
+    id: 'destination-section',
     type: 'spotlight',
-    target: '[data-tutorial="exec-status-section"]',
-    position: 'right',
-    title: 'Status Section',
-    description: 'Live feedback on your production ratio. It compares your actual source selections against the recipe-defined ratio, scaled to your target destination quantity. Green = on target.',
-    instruction: 'Click Next to continue',
+    target: '[data-tutorial="exec-destination-section"]',
+    position: 'left',
+    title: 'Add Destination Lots',
+    description: 'Each row creates one produced lot of Marker Solution.',
+    bullets: [
+      'Set Manufacturing Date to today and Blending Batch to 1',
+      'Click "+ Add Destination Lot to create a new row"',
+      'Set quantity to 22',
+    ],
+    instruction: 'Add 1 lot row with qty 22, then click Next',
     showNext: true,
   },
   // 15
+  {
+    id: 'status-section',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-status-section"]',
+    position: 'left',
+    title: 'Check the Status',
+    description: 'This section shows whether your source quantities match the recipe ratio.',
+    bullets: [
+      'Powder: target 5 — should show green',
+      'Solvent: target 20 — should show green',
+      'If yellow/red, adjust quantities in Sources',
+    ],
+    instruction: 'Confirm both sources are green, then click Next',
+    showNext: true,
+  },
+  // 16 (placeholder comment already correct)
   {
     id: 'fill-and-produce',
     type: 'corner',
@@ -234,7 +270,7 @@ export const TUTORIAL_STEPS = [
     description: 'Select source lots for each ingredient, add destination lots, and confirm the production run.',
     instruction: 'Fill in the form and click Produce',
   },
-  // 16
+  // 17
   {
     id: 'create-drawdown-recipe',
     type: 'spotlight',
@@ -244,7 +280,7 @@ export const TUTORIAL_STEPS = [
     description: 'Marker Solution (5L Jerrycan) is drawn down from 200L Drums. Click Create Drawdown to define the ratio.',
     instruction: 'Click "Create Drawdown" on the Marker Solution (5L Jerry can) row',
   },
-  // 17
+  // 18
   {
     id: 'define-drawdown',
     type: 'corner',
@@ -256,7 +292,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: 'Set the source and output, then Save',
   },
-  // 18
+  // 19
   {
     id: 'execute-drawdown',
     type: 'spotlight',
@@ -266,7 +302,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
     instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
   },
-  // 19
+  // 20
   {
     id: 'fill-and-drawdown',
     type: 'corner',
@@ -274,7 +310,7 @@ export const TUTORIAL_STEPS = [
     description: 'Select a 200L drum source lot, add destination jerrycan lots, and confirm.',
     instruction: 'Fill in the form and click Draw Down',
   },
-  // 20
+  // 21
   {
     id: 'view-history',
     type: 'corner',
@@ -282,7 +318,7 @@ export const TUTORIAL_STEPS = [
     description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
     instruction: 'Click any lot card to open its history',
   },
-  // 21
+  // 22
   {
     id: 'completion',
     type: 'completion',
@@ -412,7 +448,7 @@ export default function Tutorial({ stepIndex, onNext, onSkip }) {
   // ── Spotlight / corner tooltip ──
   const isCorner = step.type === 'corner';
   const tooltipPos = isCorner || !targetRect
-    ? { bottom: 24, right: 24 }
+    ? { bottom: 24, left: 24 }
     : getTooltipPos(targetRect, step.position);
 
   const progressPct = (stepIndex / (TUTORIAL_STEPS.length - 1)) * 100;

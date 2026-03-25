@@ -461,35 +461,35 @@ export default function App() {
       case 1: if (selectedCategoryId === 'ingredients') advance(); break;
       case 2: if (managerActiveTab === 'itemFF' && selectedCategoryId === 'ingredients') advance(); break;
       case 3: if (activeModal?.type === 'createLots') advance(); break;
-      case 4: if ((powder?.lots?.length || 0) >= 3 && !activeModal) advance(); break;
-      // step 5 is manual Next
-      case 6: if (activeModal?.type === 'batchMove') advance(); break;
-      case 7:
+      // steps 4 and 5 are manual Next (purchase modal spotlight)
+      case 6: if ((powder?.lots?.length || 0) >= 3 && !activeModal) advance(); break;
+      case 7: if (activeModal?.type === 'batchMove') advance(); break;
+      case 8:
         if (!activeModal && powder?.lots?.some(l => l.transactions?.some(t => t.type === 'move'))) advance();
         break;
-      case 8: if (selectedCategoryId === 'finished-goods') advance(); break;
-      case 9: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 10:
+      case 9: if (selectedCategoryId === 'finished-goods') advance(); break;
+      case 10: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 11:
         if (marker?.formFactorRecipes?.['200L drum'] != null && !activeModal) advance();
         break;
-      case 11:
+      case 12:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      // steps 12, 13, 14 are manual Next (modal open)
-      case 15:
+      // steps 13, 14, 15 are manual Next (sources/dest/status spotlight)
+      case 16:
         if (!activeModal && marker?.lots?.some(l => l.transactions?.some(t => t.type === 'produce'))) advance();
         break;
-      case 16: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 17:
+      case 17: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 18:
         if (marker?.formFactorRecipes?.['5L Jerry can'] != null && !activeModal) advance();
         break;
-      case 18:
+      case 19:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      case 19:
+      case 20:
         if (!activeModal && marker?.lots?.some(l => l.formFactor === '5L Jerry can' && l.transactions?.some(t => t.type === 'draw-down'))) advance();
         break;
-      case 20: if (activeModal?.type === 'lotHistory') advance(); break;
+      case 21: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
   }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
