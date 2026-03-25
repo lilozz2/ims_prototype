@@ -540,6 +540,22 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
   const attributeSchema = (category.attributeSchemas || [])
     .find(s => s.itemId === item.id && s.formFactor === ffName) || null;
 
+  const allSelected = ffLots.length > 0 && ffLots.every(l => selectedLotIds.has(l.id));
+  const someSelected = ffLots.some(l => selectedLotIds.has(l.id));
+
+  const toggleAllLots = (e) => {
+    e.stopPropagation();
+    setSelectedLotIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        ffLots.forEach(l => next.delete(l.id));
+      } else {
+        ffLots.forEach(l => next.add(l.id));
+      }
+      return next;
+    });
+  };
+
   const startQtyEdit = (lot, e) => {
     e.stopPropagation();
     setEditingLotId(lot.id);
@@ -559,9 +575,18 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
       {/* Row header */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
-        style={{ backgroundColor: '#F8FAFC' }}
+        style={{ backgroundColor: someSelected ? '#EEF2FF' : '#FAFAFA' }}
         onClick={() => setExpanded(e => !e)}
       >
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+          onChange={toggleAllLots}
+          onClick={e => e.stopPropagation()}
+          className="flex-shrink-0 cursor-pointer"
+          style={{ accentColor: '#6366F1' }}
+        />
         <ChevronDown
           size={14}
           style={{
