@@ -1218,6 +1218,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
   }, [data, item, recipe]);
 
   const [attrValues, setAttrValues] = useState({});
+  const [copyFromLotId, setCopyFromLotId] = useState('');
   const handleAttrChange = (fieldName, value) =>
     setAttrValues(prev => ({ ...prev, [fieldName]: value }));
 
@@ -1247,6 +1248,63 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       if (found) return found.name;
     }
     return itemId;
+  };
+
+  // UOM helpers
+  const getSourceUom = (itemId) => {
+    for (const cat of data.categories) {
+      const itm = cat.items.find(i => i.id === itemId);
+      if (itm) return data.uom.find(u => u.id === itm.uomId)?.symbol || '';
+    }
+    return '';
+  };
+  const destUomSymbol = data.uom.find(u => u.id === item?.uomId)?.symbol || '';
+
+  // Set of all currently-selected lot IDs (for deduplication)
+  const usedLotIds = React.useMemo(() => {
+    const used = new Set();
+    for (const rows of Object.values(sourceRowsBySegment)) {
+      for (const row of rows) {
+        if (row.lotId) used.add(row.lotId);
+      }
+    }
+    return used;
+  }, [sourceRowsBySegment]);
+
+  // Flat list of selected source lots with attributes (for copy-from dropdown)
+  const selectedSourceLots = React.useMemo(() => {
+    const seen = new Set();
+    const lots = [];
+    for (const rows of Object.values(sourceRowsBySegment)) {
+      for (const row of rows) {
+        if (row.lotId && !seen.has(row.lotId)) {
+          seen.add(row.lotId);
+          for (const cat of data.categories) {
+            for (const itm of cat.items) {
+              const lot = itm.lots?.find(l => l.id === row.lotId);
+              if (lot) lots.push({ lotId: lot.id, attributes: lot.attributes || {} });
+            }
+          }
+        }
+      }
+    }
+    return lots;
+  }, [sourceRowsBySegment, data]);
+
+  const handleCopyAttributes = (sourceLotId) => {
+    setCopyFromLotId(sourceLotId);
+    if (!sourceLotId || !outputSchema) return;
+    const sourceLot = selectedSourceLots.find(l => l.lotId === sourceLotId);
+    if (!sourceLot) return;
+    setAttrValues(prev => {
+      const next = { ...prev };
+      for (const field of outputSchema.fields) {
+        if (sourceLot.attributes[field.name] !== undefined) {
+          next[field.name] = sourceLot.attributes[field.name];
+        }
+      }
+      return next;
+    });
   };
 
   // Per-segment source row helpers
@@ -1341,20 +1399,22 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
   return (
     <ModalShell title={`${executionType === 'draw-down' ? 'Draw Down' : 'Produce'} — ${item?.name}`} onClose={onClose}>
       {/* Location selector */}
-      <FormField label="Location" required>
-        <SelectInput
-          value={locationId}
-          onChange={e => {
-            setLocationId(e.target.value);
-            setSourceRowsBySegment(initSegments());
-          }}
-        >
-          <option value="">Select location…</option>
-          {data.locations.map(loc => (
-            <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
-          ))}
-        </SelectInput>
-      </FormField>
+      <div data-tutorial="exec-location">
+        <FormField label="Location" required>
+          <SelectInput
+            value={locationId}
+            onChange={e => {
+              setLocationId(e.target.value);
+              setSourceRowsBySegment(initSegments());
+            }}
+          >
+            <option value="">Select location…</option>
+            {data.locations.map(loc => (
+              <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
+            ))}
+          </SelectInput>
+        </FormField>
+      </div>
 
       {/* Sources section — one segment per recipe source */}
       <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-sources-section">
@@ -1383,11 +1443,13 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                             onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
                           >
                             <option value="">Select lot…</option>
-                            {lotsForSrc.map(l => (
-                              <option key={l.lotId} value={l.lotId}>
-                                {l.lotId} — {l.qty} avail
-                              </option>
-                            ))}
+                            {lotsForSrc
+                              .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
+                              .map(l => (
+                                <option key={l.lotId} value={l.lotId}>
+                                  {l.lotId} — {l.qty} avail
+                                </option>
+                              ))}
                           </SelectInput>
                         </div>
                         {rows.length > 1 && (
@@ -1424,6 +1486,9 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                             className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
                             style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
                           />
+                          <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                            {getSourceUom(src.itemId)}
+                          </span>
                           <button
                             onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
                             className="text-xs px-2 py-1 rounded-lg font-semibold"
@@ -1459,9 +1524,25 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
         {/* Attribute fields — above qty rows */}
         {outputSchema && outputSchema.fields.length > 0 && (
           <div className="mb-4">
-            <div className="rounded-lg p-3 mb-3 text-xs font-medium"
+            <div className="flex items-center justify-between rounded-lg px-3 py-2 mb-3 text-xs font-medium"
                  style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
-              Attributes — {recipe.output.formFactor}
+              <span>Attributes — {recipe.output.formFactor}</span>
+              {selectedSourceLots.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span style={{ color: '#94A3B8' }}>Copy from:</span>
+                  <select
+                    value={copyFromLotId}
+                    onChange={e => handleCopyAttributes(e.target.value)}
+                    className="rounded px-1.5 py-0.5 outline-none border"
+                    style={{ borderColor: '#C7D2FE', color: '#4F46E5', backgroundColor: '#fff', fontSize: '11px' }}
+                  >
+                    <option value="">— select lot —</option>
+                    {selectedSourceLots.map(l => (
+                      <option key={l.lotId} value={l.lotId}>{l.lotId}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             {outputSchema.fields.map(field => (
               <FormField key={field.name} label={field.name} required={field.required}>
@@ -1511,6 +1592,9 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                   className="flex-1 text-sm font-mono bg-transparent outline-none"
                   style={{ color: '#1E1B4B' }}
                 />
+                {destUomSymbol && (
+                  <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{destUomSymbol}</span>
+                )}
               </div>
               {destRows.length > 1 && (
                 <button

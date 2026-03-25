@@ -217,6 +217,17 @@ export const TUTORIAL_STEPS = [
   },
   // 13
   {
+    id: 'exec-select-location',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-location"]',
+    position: 'left',
+    title: 'Select the Source Location',
+    description: 'Choose the warehouse where your source lots are stored. This filters the available lots in the Sources section.',
+    instruction: 'Select "Uskun Warehouse" from the dropdown, then click Next',
+    showNext: true,
+  },
+  // 14
+  {
     id: 'sources-section',
     type: 'spotlight',
     target: '[data-tutorial="exec-sources-section"]',
@@ -230,7 +241,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select lots and set quantities, then click Next',
     showNext: true,
   },
-  // 14
+  // 15
   {
     id: 'destination-section',
     type: 'spotlight',
@@ -246,7 +257,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Add 1 lot row with qty 22, then click Next',
     showNext: true,
   },
-  // 15
+  // 16
   {
     id: 'status-section',
     type: 'spotlight',
@@ -262,7 +273,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Confirm both sources are green, then click Next',
     showNext: true,
   },
-  // 16 (placeholder comment already correct)
+  // 17
   {
     id: 'fill-and-produce',
     type: 'corner',
@@ -270,7 +281,7 @@ export const TUTORIAL_STEPS = [
     description: 'Select source lots for each ingredient, add destination lots, and confirm the production run.',
     instruction: 'Fill in the form and click Produce',
   },
-  // 17
+  // 18
   {
     id: 'create-drawdown-recipe',
     type: 'spotlight',
@@ -280,7 +291,7 @@ export const TUTORIAL_STEPS = [
     description: 'Marker Solution (5L Jerrycan) is drawn down from 200L Drums. Click Create Drawdown to define the ratio.',
     instruction: 'Click "Create Drawdown" on the Marker Solution (5L Jerry can) row',
   },
-  // 18
+  // 19
   {
     id: 'define-drawdown',
     type: 'corner',
@@ -292,7 +303,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: 'Set the source and output, then Save',
   },
-  // 19
+  // 20
   {
     id: 'execute-drawdown',
     type: 'spotlight',
@@ -302,7 +313,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
     instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
   },
-  // 20
+  // 21
   {
     id: 'fill-and-drawdown',
     type: 'corner',
@@ -310,7 +321,7 @@ export const TUTORIAL_STEPS = [
     description: 'Select a 200L drum source lot, add destination jerrycan lots, and confirm.',
     instruction: 'Fill in the form and click Draw Down',
   },
-  // 21
+  // 22
   {
     id: 'view-history',
     type: 'corner',
@@ -318,7 +329,7 @@ export const TUTORIAL_STEPS = [
     description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
     instruction: 'Click any lot card to open its history',
   },
-  // 22
+  // 23
   {
     id: 'completion',
     type: 'completion',

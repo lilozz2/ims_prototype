@@ -475,21 +475,21 @@ export default function App() {
       case 12:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      // steps 13, 14, 15 are manual Next (sources/dest/status spotlight)
-      case 16:
+      // steps 13, 14, 15, 16 are manual Next (location/sources/dest/status spotlight)
+      case 17:
         if (!activeModal && marker?.lots?.some(l => l.transactions?.some(t => t.type === 'produce'))) advance();
         break;
-      case 17: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 18:
+      case 18: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 19:
         if (marker?.formFactorRecipes?.['5L Jerry can'] != null && !activeModal) advance();
         break;
-      case 19:
+      case 20:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      case 20:
+      case 21:
         if (!activeModal && marker?.lots?.some(l => l.formFactor === '5L Jerry can' && l.transactions?.some(t => t.type === 'draw-down'))) advance();
         break;
-      case 21: if (activeModal?.type === 'lotHistory') advance(); break;
+      case 22: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
   }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
