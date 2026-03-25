@@ -156,6 +156,13 @@ export const TUTORIAL_STEPS = [
   },
   // 7
   {
+    id: 'milestone-purchase',
+    type: 'milestone',
+    phase: 0,
+    text: "Your ingredients are now in SG Warehouse. Next, you'll batch move the lots to Uskun Warehouse — where production happens.",
+  },
+  // 8
+  {
     id: 'select-and-move',
     type: 'spotlight',
     target: '[data-tutorial="lot-area-powder-bag"]',
@@ -164,7 +171,7 @@ export const TUTORIAL_STEPS = [
     description: 'Use the checkboxes to select the powder lots. The Batch Actions button will appear in the header — click it, then choose Move.',
     instruction: 'Select lots → Batch Actions → Move',
   },
-  // 8
+  // 9
   {
     id: 'move-to-uskun',
     type: 'corner',
@@ -172,7 +179,14 @@ export const TUTORIAL_STEPS = [
     description: 'Select Uskun Warehouse as the destination and confirm.',
     instruction: 'Set the destination to Uskun Warehouse and click Move Lots',
   },
-  // 9
+  // 10
+  {
+    id: 'milestone-move',
+    type: 'milestone',
+    phase: 1,
+    text: "Lots are at Uskun Warehouse. Time to set up a production recipe and manufacture Marker Solution (200L drum).",
+  },
+  // 11
   {
     id: 'navigate-to-finished-goods',
     type: 'spotlight',
@@ -182,7 +196,7 @@ export const TUTORIAL_STEPS = [
     description: 'Now navigate to Finished Goods to work with Marker Solution.',
     instruction: 'Click "Finished Goods" in the sidebar',
   },
-  // 10
+  // 12
   {
     id: 'create-production-recipe',
     type: 'spotlight',
@@ -192,7 +206,7 @@ export const TUTORIAL_STEPS = [
     description: 'Marker Solution (200L Drum) is manufactured from powder and solvent. Click Create Recipe to define the formula.',
     instruction: 'Click "Create Recipe" on the Marker Solution (200L drum) row',
   },
-  // 11
+  // 13
   {
     id: 'define-recipe',
     type: 'corner',
@@ -205,7 +219,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: 'Add both sources, set output qty to 22, then Save',
   },
-  // 12
+  // 14
   {
     id: 'produce-marker',
     type: 'spotlight',
@@ -215,7 +229,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your recipe is saved. Click Produce to start a production run for Marker Solution.',
     instruction: 'Click "Produce" on the Marker Solution (200L drum) row',
   },
-  // 13
+  // 15
   {
     id: 'exec-select-location',
     type: 'spotlight',
@@ -226,7 +240,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select "Uskun Warehouse" from the dropdown, then click Next',
     showNext: true,
   },
-  // 14
+  // 16
   {
     id: 'sources-section',
     type: 'spotlight',
@@ -241,7 +255,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select lots and set quantities, then click Next',
     showNext: true,
   },
-  // 15
+  // 17
   {
     id: 'destination-section',
     type: 'spotlight',
@@ -257,7 +271,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Add 1 lot row with qty 22, then click Next',
     showNext: true,
   },
-  // 16
+  // 18
   {
     id: 'status-section',
     type: 'spotlight',
@@ -273,7 +287,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Confirm both sources are green, then click Next',
     showNext: true,
   },
-  // 17
+  // 19
   {
     id: 'fill-and-produce',
     type: 'corner',
@@ -281,7 +295,14 @@ export const TUTORIAL_STEPS = [
     description: 'Select source lots for each ingredient, add destination lots, and confirm the production run.',
     instruction: 'Fill in the form and click Produce',
   },
-  // 18
+  // 20
+  {
+    id: 'milestone-manufacture',
+    type: 'milestone',
+    phase: 2,
+    text: "Marker Solution is now in 200L drums. Next, draw it down into smaller 5L Jerry cans for distribution.",
+  },
+  // 21
   {
     id: 'create-drawdown-recipe',
     type: 'spotlight',
@@ -291,7 +312,7 @@ export const TUTORIAL_STEPS = [
     description: 'Marker Solution (5L Jerrycan) is drawn down from 200L Drums. Click Create Drawdown to define the ratio.',
     instruction: 'Click "Create Drawdown" on the Marker Solution (5L Jerry can) row',
   },
-  // 19
+  // 22
   {
     id: 'define-drawdown',
     type: 'corner',
@@ -303,7 +324,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: 'Set the source and output, then Save',
   },
-  // 20
+  // 23
   {
     id: 'execute-drawdown',
     type: 'spotlight',
@@ -313,7 +334,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
     instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
   },
-  // 21
+  // 24
   {
     id: 'fill-drawdown-location-source',
     type: 'spotlight',
@@ -324,7 +345,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select "Uskun Warehouse" as location, then select the produced lot as the source, then click Next',
     showNext: true,
   },
-  // 22
+  // 25
   {
     id: 'fill-drawdown-attributes',
     type: 'spotlight',
@@ -335,7 +356,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Use "Copy from" to copy attributes from the source lot, then click Next',
     showNext: true,
   },
-  // 23
+  // 26
   {
     id: 'fill-drawdown-dest-lots',
     type: 'spotlight',
@@ -346,7 +367,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Add 2 destination lots of 11L each, then click Next',
     showNext: true,
   },
-  // 24
+  // 27
   {
     id: 'fill-drawdown-execute',
     type: 'spotlight',
@@ -356,7 +377,14 @@ export const TUTORIAL_STEPS = [
     description: 'Review the status summary to ensure everything balances, then click Draw Down to complete the transaction.',
     instruction: 'Check status, then click Draw Down',
   },
-  // 25
+  // 28
+  {
+    id: 'milestone-drawdown',
+    type: 'milestone',
+    phase: 3,
+    text: "Draw-down complete! Finally, let's view the full transaction history — every step of this workflow is recorded here.",
+  },
+  // 29
   {
     id: 'view-history',
     type: 'corner',
@@ -364,7 +392,7 @@ export const TUTORIAL_STEPS = [
     description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
     instruction: 'Click any lot card to open its history',
   },
-  // 26
+  // 30
   {
     id: 'completion',
     type: 'completion',
@@ -381,6 +409,151 @@ export const TUTORIAL_STEPS = [
     ],
   },
 ];
+
+// ─── Milestone card ──────────────────────────────────────────────────
+const MILESTONE_PHASES = [
+  { label: 'PURCHASE' },
+  { label: 'MOVE' },
+  { label: 'MANUFACTURE' },
+  { label: 'DRAW DOWN' },
+];
+
+function MilestoneCard({ phase, text, onNext }) {
+  const startPct = 8 + (84 / 3) * phase;
+  const endPct   = phase === 3 ? startPct : 8 + (84 / 3) * (phase + 1);
+
+  const [truckPct,   setTruckPct]   = useState(startPct);
+  const [typed,      setTyped]      = useState('');
+  const [showBtn,    setShowBtn]    = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    setTruckPct(startPct);
+    setTyped('');
+    setShowBtn(false);
+    setShowCursor(true);
+
+    const truckTimer = setTimeout(() => setTruckPct(endPct), 60);
+
+    let i = 0;
+    let typeInterval;
+    const typeTimer = setTimeout(() => {
+      typeInterval = setInterval(() => {
+        i++;
+        setTyped(text.slice(0, i));
+        if (i >= text.length) {
+          clearInterval(typeInterval);
+          setShowCursor(false);
+          setShowBtn(true);
+        }
+      }, 22);
+    }, 1100);
+
+    return () => {
+      clearTimeout(truckTimer);
+      clearTimeout(typeTimer);
+      clearInterval(typeInterval);
+    };
+  }, [phase, text]); // eslint-disable-line
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ zIndex: 80, backgroundColor: 'rgba(15,15,35,0.72)' }}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl mx-4"
+        style={{ maxWidth: 500, width: '100%', padding: '32px 32px 28px', border: '1px solid rgba(99,102,241,0.18)' }}
+      >
+        {/* Roadmap */}
+        <div style={{ position: 'relative', height: 80, marginBottom: 28, userSelect: 'none' }}>
+          {/* Dashed line */}
+          <div style={{
+            position: 'absolute', top: 54,
+            left: '8%', right: '8%', height: 0,
+            borderTop: '2px dashed #CBD5E1',
+          }} />
+
+          {/* Nodes */}
+          {MILESTONE_PHASES.map((p, i) => {
+            const leftPct = 8 + (84 / 3) * i;
+            const done   = i <= phase;
+            const active = phase < 3 && i === phase + 1;
+            return (
+              <div key={i} style={{ position: 'absolute', left: `${leftPct}%`, transform: 'translateX(-50%)', textAlign: 'center' }}>
+                <div style={{
+                  width: active ? 24 : 18,
+                  height: active ? 24 : 18,
+                  borderRadius: active ? 6 : '50%',
+                  backgroundColor: (done || active) ? '#1E1B4B' : '#E2E8F0',
+                  border: active ? '2px solid #6366F1' : 'none',
+                  margin: '0 auto',
+                  marginTop: active ? 41 : 44,
+                  transition: 'all 400ms ease',
+                }} />
+                <div style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  color: (done || active) ? '#1E1B4B' : '#94A3B8',
+                  marginTop: 6,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {p.label}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Truck */}
+          <div style={{
+            position: 'absolute',
+            top: 6,
+            left: `${truckPct}%`,
+            transform: 'translateX(-50%) scaleX(-1)',
+            fontSize: 22,
+            transition: 'left 2000ms cubic-bezier(0.4,0,0.2,1)',
+            pointerEvents: 'none',
+          }}>
+            🚚
+          </div>
+        </div>
+
+        {/* Typewriter text */}
+        <div
+          className="rounded-xl px-4 py-3 mb-6 text-sm leading-relaxed"
+          style={{
+            backgroundColor: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            color: '#334155',
+            minHeight: 64,
+            fontFamily: 'monospace',
+          }}
+        >
+          {typed}
+          {showCursor && (
+            <span style={{ animation: 'blink 0.8s step-start infinite', color: '#6366F1' }}>|</span>
+          )}
+        </div>
+
+        {/* Continue button */}
+        <div className="flex justify-end">
+          {showBtn && (
+            <button
+              className="px-6 py-2.5 rounded-lg text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#6366F1', color: '#fff' }}
+              onClick={onNext}
+            >
+              Continue →
+            </button>
+          )}
+        </div>
+      </div>
+
+      <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
+    </div>
+  );
+}
 
 // ─── Tooltip position helper ─────────────────────────────────────────
 function getTooltipPos(rect, position) {
@@ -458,6 +631,11 @@ export default function Tutorial({ stepIndex, onNext, onBack, onSkip }) {
         </div>
       </div>
     );
+  }
+
+  // ── Milestone card ──
+  if (step.type === 'milestone') {
+    return <MilestoneCard phase={step.phase} text={step.text} onNext={onNext} />;
   }
 
   // ── Completion modal ──
