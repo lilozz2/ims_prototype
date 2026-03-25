@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
-import { CreateLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
+import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS } from './Tutorial.jsx';
 
@@ -492,6 +492,24 @@ export default function App() {
     closeModal();
   }, [showToast, closeModal]);
 
+  const handleUpdateLot = useCallback(({ categoryId, itemId, lot }) => {
+    setData(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat =>
+        cat.id !== categoryId ? cat : {
+          ...cat,
+          items: cat.items.map(item =>
+            item.id !== itemId ? item : {
+              ...item,
+              lots: item.lots.map(l => l.id === lot.id ? { ...l, ...lot } : l),
+            }
+          ),
+        }
+      ),
+    }));
+    showToast('Lot updated', 'success');
+  }, [showToast]);
+
   const handleAddItem = useCallback(({ categoryId, item }) => {
     setData(prev => ({
       ...prev,
@@ -787,6 +805,7 @@ export default function App() {
       addPolicy: handleAddPolicy,
       editPolicy: handleEditPolicy,
       removePolicy: handleRemovePolicy,
+      updateLot: handleUpdateLot,
     },
     onOpenModal: openModal,
   };
@@ -821,7 +840,7 @@ export default function App() {
       const uomEntry = data.uom.find(u => u.id === payload.item?.uomId);
       const uomLabel = uomEntry ? `${uomEntry.name} (${uomEntry.symbol})` : '—';
       return (
-        <CreateLotsModal
+        <PurchaseLotsModal
           category={category}
           item={payload.item}
           preselectedFormFactor={payload.formFactor || ''}

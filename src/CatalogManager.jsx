@@ -533,9 +533,25 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
 
 // ── Item-Form-Factor Tab ──────────────────────────────────────────
 
-function FormFactorGroupRow({ item, ffName, category, onOpenModal }) {
+function FormFactorGroupRow({ item, ffName, category, onOpenModal, onUpdateLot }) {
   const [expanded, setExpanded] = useState(true);
+  const [editingLotId, setEditingLotId] = useState(null);
+  const [editQty, setEditQty] = useState('');
   const ffLots = (item.lots || []).filter(lot => lot.formFactor === ffName);
+
+  const startQtyEdit = (lot, e) => {
+    e.stopPropagation();
+    setEditingLotId(lot.id);
+    setEditQty(String(lot.qty ?? ''));
+  };
+
+  const commitQtyEdit = (lot) => {
+    const newQty = parseFloat(editQty);
+    if (!isNaN(newQty) && newQty >= 0 && newQty !== lot.qty) {
+      onUpdateLot({ ...lot, qty: newQty });
+    }
+    setEditingLotId(null);
+  };
 
   return (
     <div className="ml-6 rounded-lg border border-slate-200 overflow-hidden mb-2">
@@ -573,7 +589,7 @@ function FormFactorGroupRow({ item, ffName, category, onOpenModal }) {
             onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
           >
             <Plus size={11} />
-            Create Lots
+            Purchase Lots
           </button>
           {item.recipe && (
             <button
@@ -598,25 +614,73 @@ function FormFactorGroupRow({ item, ffName, category, onOpenModal }) {
             ffLots.map(lot => (
               <div
                 key={lot.id}
-                className="flex items-center gap-3 px-4 py-2.5 border-t border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
-                onClick={() => onOpenModal('lotHistory', { lot })}
+                className="px-4 py-2.5 border-t border-slate-100 hover:bg-slate-50 transition-colors"
               >
-                <span className="text-xs font-mono" style={{ color: '#1E1B4B' }}>{lot.id}</span>
-                {lot.highlightNew && (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded font-medium"
-                    style={{ backgroundColor: '#D1FAE5', color: '#059669' }}
-                  >
-                    New
-                  </span>
-                )}
-                <span className="text-xs ml-auto" style={{ color: '#64748B' }}>
-                  Qty: {(lot.qty || 0).toLocaleString()}
-                </span>
-                {lot.buyInPrice > 0 && (
-                  <span className="text-xs" style={{ color: '#94A3B8' }}>
-                    ${lot.buyInPrice.toFixed(2)}
-                  </span>
+                {/* Row 1: identifiers + qty/price */}
+                <div
+                  className="flex items-center gap-3 cursor-pointer"
+                  onClick={() => editingLotId !== lot.id && onOpenModal('lotHistory', { lot })}
+                >
+                  <span className="text-xs font-mono" style={{ color: '#1E1B4B' }}>{lot.id}</span>
+                  {lot.highlightNew && (
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded font-medium"
+                      style={{ backgroundColor: '#D1FAE5', color: '#059669' }}
+                    >
+                      New
+                    </span>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#94A3B8' }}>Qty:</span>
+                    {editingLotId === lot.id ? (
+                      <input
+                        type="number"
+                        className="w-20 px-2 py-0.5 rounded border text-xs outline-none"
+                        style={{ borderColor: '#6366F1', color: '#1E1B4B' }}
+                        value={editQty}
+                        min="0"
+                        step="any"
+                        autoFocus
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => setEditQty(e.target.value)}
+                        onBlur={() => commitQtyEdit(lot)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); commitQtyEdit(lot); }
+                          if (e.key === 'Escape') { e.stopPropagation(); setEditingLotId(null); }
+                        }}
+                      />
+                    ) : (
+                      <span
+                        className="text-xs font-medium cursor-text rounded px-1 hover:bg-indigo-50 transition-colors"
+                        style={{ color: '#1E1B4B' }}
+                        title="Click to edit quantity"
+                        onClick={e => startQtyEdit(lot, e)}
+                      >
+                        {(lot.qty || 0).toLocaleString()}
+                      </span>
+                    )}
+                    {lot.buyInPrice > 0 && (
+                      <span className="text-xs" style={{ color: '#94A3B8' }}>
+                        ${lot.buyInPrice.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: attribute chips */}
+                {lot.attributes && Object.keys(lot.attributes).length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 ml-1">
+                    {Object.entries(lot.attributes).map(([key, val]) => (
+                      <span
+                        key={key}
+                        className="text-xs px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
+                      >
+                        <span style={{ color: '#94A3B8' }}>{key}:</span>{' '}
+                        <span style={{ color: '#475569' }}>{String(val)}</span>
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
             ))
@@ -688,6 +752,7 @@ function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
                     ffName={ffName}
                     category={category}
                     onOpenModal={onOpenModal}
+                    onUpdateLot={(lot) => onUpdate.updateLot({ categoryId: category.id, itemId: item.id, lot })}
                   />
                 ))
               )}
@@ -708,17 +773,17 @@ export default function CatalogManager({ data, selectedCategoryId, onUpdate, onO
   if (!category) return null;
 
   const tabs = [
+    { id: 'itemFF', label: 'Items & Lots' },
     { id: 'items', label: 'Items' },
     { id: 'formFactors', label: 'Form Factors' },
-    { id: 'itemFF', label: 'Items & Lots' },
     { id: 'schemas', label: 'Attribute Schemas' },
     { id: 'policies', label: 'Warehouse Policy' },
   ];
 
   const tabLabels = {
+    itemFF: 'Items & Lots',
     items: 'Items',
     formFactors: 'Form Factors',
-    itemFF: 'Items & Lots',
     schemas: 'Attribute Schemas',
     policies: 'Warehouse Policy',
   };

@@ -212,13 +212,13 @@ function ShimmerField() {
   );
 }
 
-// ── CreateLotsModal ───────────────────────────────────────────────
+// ── PurchaseLotsModal ───────────────────────────────────────────────
 
 function makeEntry() {
   return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), batchId: 'B-' + Date.now().toString(36).toUpperCase(), qty: '', buyInPrice: '' };
 }
 
-export function CreateLotsModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
+export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
   const [formFactor, setFormFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
@@ -291,7 +291,7 @@ export function CreateLotsModal({ category, item, preselectedFormFactor, uomLabe
   };
 
   return (
-    <ModalShell title={`Create Lots — ${item?.name}`} onClose={onClose}>
+    <ModalShell title={`Purchase Lots — ${item?.name}`} onClose={onClose}>
       <FormField label="Category">
         <ReadOnlyField value={category?.name} />
       </FormField>
@@ -463,7 +463,7 @@ export function CreateLotsModal({ category, item, preselectedFormFactor, uomLabe
         onClick={handleSubmit}
         disabled={!formFactor || !entries.some(e => e.batchId && e.qty)}
       >
-        Create Lots
+        Purchase Lots
       </SubmitButton>
     </ModalShell>
   );
