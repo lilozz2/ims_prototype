@@ -1398,121 +1398,123 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
 
   return (
     <ModalShell title={`${executionType === 'draw-down' ? 'Draw Down' : 'Produce'} — ${item?.name}`} onClose={onClose}>
-      {/* Location selector */}
-      <div data-tutorial="exec-location">
-        <FormField label="Location" required>
-          <SelectInput
-            value={locationId}
-            onChange={e => {
-              setLocationId(e.target.value);
-              setSourceRowsBySegment(initSegments());
-            }}
-          >
-            <option value="">Select location…</option>
-            {data.locations.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
-            ))}
-          </SelectInput>
-        </FormField>
-      </div>
+      <div data-tutorial="exec-location-sources">
+        {/* Location selector */}
+        <div data-tutorial="exec-location">
+          <FormField label="Location" required>
+            <SelectInput
+              value={locationId}
+              onChange={e => {
+                setLocationId(e.target.value);
+                setSourceRowsBySegment(initSegments());
+              }}
+            >
+              <option value="">Select location…</option>
+              {data.locations.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
+              ))}
+            </SelectInput>
+          </FormField>
+        </div>
 
-      {/* Sources section — one segment per recipe source */}
-      <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-sources-section">
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
-          Sources
-        </p>
-        {(recipe?.sources || []).map((src, srcIdx) => {
-          const lotsForSrc = selectableLotsPerSrc[src.id] || [];
-          const rows = sourceRowsBySegment[src.id] || [];
-          return (
-            <div key={src.id} className={srcIdx > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
-              <p className="text-xs font-semibold mb-2" style={{ color: '#1E1B4B' }}>
-                {getItemName(src.itemId)}
-                <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
-              </p>
-              <div className="space-y-3">
-                {rows.map(row => {
-                  const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
-                  const maxQty = lotInfo?.qty ?? 0;
-                  return (
-                    <div key={row.id} className="rounded-lg p-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1">
-                          <SelectInput
-                            value={row.lotId}
-                            onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
-                          >
-                            <option value="">Select lot…</option>
-                            {lotsForSrc
-                              .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
-                              .map(l => (
-                                <option key={l.lotId} value={l.lotId}>
-                                  {l.lotId} — {l.qty} avail
-                                </option>
-                              ))}
-                          </SelectInput>
+        {/* Sources section — one segment per recipe source */}
+        <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-sources-section">
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+            Sources
+          </p>
+          {(recipe?.sources || []).map((src, srcIdx) => {
+            const lotsForSrc = selectableLotsPerSrc[src.id] || [];
+            const rows = sourceRowsBySegment[src.id] || [];
+            return (
+              <div key={src.id} className={srcIdx > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
+                <p className="text-xs font-semibold mb-2" style={{ color: '#1E1B4B' }}>
+                  {getItemName(src.itemId)}
+                  <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
+                </p>
+                <div className="space-y-3">
+                  {rows.map(row => {
+                    const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
+                    const maxQty = lotInfo?.qty ?? 0;
+                    return (
+                      <div key={row.id} className="rounded-lg p-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex-1">
+                            <SelectInput
+                              value={row.lotId}
+                              onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
+                            >
+                              <option value="">Select lot…</option>
+                              {lotsForSrc
+                                .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
+                                .map(l => (
+                                  <option key={l.lotId} value={l.lotId}>
+                                    {l.lotId} — {l.qty} avail
+                                  </option>
+                                ))}
+                            </SelectInput>
+                          </div>
+                          {rows.length > 1 && (
+                            <button
+                              onClick={() => removeSrcRow(src.id, row.id)}
+                              className="p-1 rounded hover:bg-red-50"
+                              style={{ color: '#EF4444' }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
-                        {rows.length > 1 && (
-                          <button
-                            onClick={() => removeSrcRow(src.id, row.id)}
-                            className="p-1 rounded hover:bg-red-50"
-                            style={{ color: '#EF4444' }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        {row.lotId && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs w-4 text-right" style={{ color: '#94A3B8' }}>0</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={maxQty}
+                              value={row.qtyToUse}
+                              onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseInt(e.target.value, 10) })}
+                              className="flex-1"
+                            />
+                            <span className="text-xs w-8 text-left" style={{ color: '#94A3B8' }}>{maxQty}</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={maxQty}
+                              value={row.qtyToUse}
+                              onChange={e => {
+                                const v = Math.min(maxQty, Math.max(0, parseInt(e.target.value, 10) || 0));
+                                updateSrcRow(src.id, row.id, { qtyToUse: v });
+                              }}
+                              className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
+                              style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
+                            />
+                            <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                              {getSourceUom(src.itemId)}
+                            </span>
+                            <button
+                              onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
+                              className="text-xs px-2 py-1 rounded-lg font-semibold"
+                              style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
+                            >
+                              MAX
+                            </button>
+                          </div>
                         )}
                       </div>
-                      {row.lotId && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs w-4 text-right" style={{ color: '#94A3B8' }}>0</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={maxQty}
-                            value={row.qtyToUse}
-                            onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseInt(e.target.value, 10) })}
-                            className="flex-1"
-                          />
-                          <span className="text-xs w-8 text-left" style={{ color: '#94A3B8' }}>{maxQty}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            max={maxQty}
-                            value={row.qtyToUse}
-                            onChange={e => {
-                              const v = Math.min(maxQty, Math.max(0, parseInt(e.target.value, 10) || 0));
-                              updateSrcRow(src.id, row.id, { qtyToUse: v });
-                            }}
-                            className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
-                            style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
-                          />
-                          <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
-                            {getSourceUom(src.itemId)}
-                          </span>
-                          <button
-                            onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
-                            className="text-xs px-2 py-1 rounded-lg font-semibold"
-                            style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
-                          >
-                            MAX
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => addSrcRow(src.id)}
+                  disabled={!locationId}
+                  className="mt-2 flex items-center gap-1 text-xs font-medium disabled:opacity-40"
+                  style={{ color: '#6366F1' }}
+                >
+                  <Plus size={12} /> Add Lot
+                </button>
               </div>
-              <button
-                onClick={() => addSrcRow(src.id)}
-                disabled={!locationId}
-                className="mt-2 flex items-center gap-1 text-xs font-medium disabled:opacity-40"
-                style={{ color: '#6366F1' }}
-              >
-                <Plus size={12} /> Add Lot
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Destination section */}
@@ -1578,43 +1580,45 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
         )}
 
         {/* Qty rows */}
-        <div className="space-y-2">
-          {destRows.map((row) => (
-            <div key={row.id} className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <span className="text-xs" style={{ color: '#64748B' }}>Qty:</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={row.qty}
-                  onChange={e => updateDestRow(row.id, e.target.value)}
-                  placeholder="0"
-                  className="flex-1 text-sm font-mono bg-transparent outline-none"
-                  style={{ color: '#1E1B4B' }}
-                />
-                {destUomSymbol && (
-                  <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{destUomSymbol}</span>
+        <div data-tutorial="exec-add-dest-lot">
+          <div className="space-y-2">
+            {destRows.map((row) => (
+              <div key={row.id} className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  <span className="text-xs" style={{ color: '#64748B' }}>Qty:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={row.qty}
+                    onChange={e => updateDestRow(row.id, e.target.value)}
+                    placeholder="0"
+                    className="flex-1 text-sm font-mono bg-transparent outline-none"
+                    style={{ color: '#1E1B4B' }}
+                  />
+                  {destUomSymbol && (
+                    <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{destUomSymbol}</span>
+                  )}
+                </div>
+                {destRows.length > 1 && (
+                  <button
+                    onClick={() => removeDestRow(row.id)}
+                    className="p-1 rounded hover:bg-red-50"
+                    style={{ color: '#EF4444' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
               </div>
-              {destRows.length > 1 && (
-                <button
-                  onClick={() => removeDestRow(row.id)}
-                  className="p-1 rounded hover:bg-red-50"
-                  style={{ color: '#EF4444' }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          <button
+            onClick={addDestRow}
+            className="mt-2 flex items-center gap-1 text-xs font-medium"
+            style={{ color: '#6366F1' }}
+          >
+            <Plus size={12} /> Add Destination Lot
+          </button>
         </div>
-        <button
-          onClick={addDestRow}
-          className="mt-2 flex items-center gap-1 text-xs font-medium"
-          style={{ color: '#6366F1' }}
-        >
-          <Plus size={12} /> Add Destination Lot
-        </button>
       </div>
 
       {/* Status section */}

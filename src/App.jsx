@@ -486,10 +486,10 @@ export default function App() {
       case 20:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      case 21:
+      case 24:
         if (!activeModal && marker?.lots?.some(l => l.formFactor === '5L Jerry can' && l.transactions?.some(t => t.type === 'draw-down'))) advance();
         break;
-      case 22: if (activeModal?.type === 'lotHistory') advance(); break;
+      case 25: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
   }, [tutorialStep, selectedCategoryId, managerActiveTab, activeModal, data]);
@@ -1247,6 +1247,7 @@ export default function App() {
         <Tutorial
           stepIndex={tutorialStep}
           onNext={() => setTutorialStep(s => s + 1)}
+          onBack={() => setTutorialStep(s => Math.max(1, s - 1))}
           onSkip={() => setTutorialStep(null)}
         />
       )}

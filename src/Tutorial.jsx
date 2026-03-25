@@ -286,7 +286,7 @@ export const TUTORIAL_STEPS = [
     id: 'create-drawdown-recipe',
     type: 'spotlight',
     target: '[data-tutorial="drawdown-btn-marker-5L"]',
-    position: 'bottom',
+    position: 'top',
     title: 'Create a Draw Down Recipe',
     description: 'Marker Solution (5L Jerrycan) is drawn down from 200L Drums. Click Create Drawdown to define the ratio.',
     instruction: 'Click "Create Drawdown" on the Marker Solution (5L Jerry can) row',
@@ -308,20 +308,55 @@ export const TUTORIAL_STEPS = [
     id: 'execute-drawdown',
     type: 'spotlight',
     target: '[data-tutorial="drawdown-execute-btn-marker-5L"]',
-    position: 'bottom',
+    position: 'top',
     title: 'Draw Down',
     description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
     instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
   },
   // 21
   {
-    id: 'fill-and-drawdown',
-    type: 'corner',
-    title: 'Fill in and Draw Down',
-    description: 'Select a 200L drum source lot, add destination jerrycan lots, and confirm.',
-    instruction: 'Fill in the form and click Draw Down',
+    id: 'fill-drawdown-location-source',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-location-sources"]',
+    position: 'left',
+    title: '📍 Select Location & Source Lot',
+    description: 'Choose "Uskun Warehouse" as the location — this filters available lots. Then select the Marker Solution (200L drum) lot you just produced as the source.',
+    instruction: 'Select "Uskun Warehouse" as location, then select the produced lot as the source, then click Next',
+    showNext: true,
   },
   // 22
+  {
+    id: 'fill-drawdown-attributes',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-destination-section"]',
+    position: 'left',
+    title: '📋 Copy Source Attributes',
+    description: 'Pre-fill the destination lot\'s attributes by copying from the source lot. Use the "Copy from" dropdown in the Attributes header.',
+    instruction: 'Use "Copy from" to copy attributes from the source lot, then click Next',
+    showNext: true,
+  },
+  // 23
+  {
+    id: 'fill-drawdown-dest-lots',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-add-dest-lot"]',
+    position: 'top',
+    title: '📦 Add Destination Lots',
+    description: 'Create 2 destination lots of 11L each. Click "Add Destination Lot" to add a second row.',
+    instruction: 'Add 2 destination lots of 11L each, then click Next',
+    showNext: true,
+  },
+  // 24
+  {
+    id: 'fill-drawdown-execute',
+    type: 'spotlight',
+    target: '[data-tutorial="exec-status-section"]',
+    position: 'left',
+    title: '✅ Check Status & Draw Down',
+    description: 'Review the status summary to ensure everything balances, then click Draw Down to complete the transaction.',
+    instruction: 'Check status, then click Draw Down',
+  },
+  // 25
   {
     id: 'view-history',
     type: 'corner',
@@ -329,7 +364,7 @@ export const TUTORIAL_STEPS = [
     description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
     instruction: 'Click any lot card to open its history',
   },
-  // 23
+  // 26
   {
     id: 'completion',
     type: 'completion',
@@ -363,7 +398,7 @@ function getTooltipPos(rect, position) {
 }
 
 // ─── Main Tutorial component ─────────────────────────────────────────
-export default function Tutorial({ stepIndex, onNext, onSkip }) {
+export default function Tutorial({ stepIndex, onNext, onBack, onSkip }) {
   const [targetRect, setTargetRect] = useState(null);
   const rafRef = useRef(null);
 
@@ -517,28 +552,36 @@ export default function Tutorial({ stepIndex, onNext, onSkip }) {
               👉 {step.instruction}
             </div>
           )}
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-xs" style={{ color: '#CBD5E1' }}>
+          <div className="flex items-center gap-2 mt-3" style={{ flexWrap: 'nowrap' }}>
+            <span className="text-xs flex-shrink-0" style={{ color: '#CBD5E1' }}>
               Step {stepIndex} of {totalActionSteps}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex-1" />
+            <button
+              className="text-xs flex-shrink-0 cursor-pointer transition-colors hover:text-slate-500"
+              style={{ color: '#CBD5E1' }}
+              onClick={onSkip}
+            >
+              Skip
+            </button>
+            {stepIndex > 1 && (
               <button
-                className="text-xs cursor-pointer transition-colors hover:text-slate-500"
-                style={{ color: '#CBD5E1' }}
-                onClick={onSkip}
+                className="text-xs flex-shrink-0 px-2.5 py-1 rounded-lg font-semibold cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
+                onClick={onBack}
               >
-                Skip tutorial
+                ← Back
               </button>
-              {step.showNext && (
-                <button
-                  className="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer hover:opacity-90"
-                  style={{ backgroundColor: '#6366F1', color: '#fff' }}
-                  onClick={onNext}
-                >
-                  Next →
-                </button>
-              )}
-            </div>
+            )}
+            {step.showNext && (
+              <button
+                className="text-xs flex-shrink-0 px-2.5 py-1 rounded-lg font-semibold cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                onClick={onNext}
+              >
+                Next →
+              </button>
+            )}
           </div>
         </div>
       </div>
