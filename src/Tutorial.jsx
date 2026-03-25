@@ -629,7 +629,7 @@ export const SETUP_TUTORIAL_STEPS = [
     bullets: ['Name: test powder', 'SKU: PW-001', 'UoM: testUoM', 'Default form factor: testFormFactor'],
     instruction: 'Fill in the fields above, then click Save' },
   // 13 — auto when activeModal?.type === 'attachFormFactors'
-  { id: 'setup-attach-ff', type: 'spotlight', target: '[data-tutorial="items-list"]', position: 'right',
+  { id: 'setup-attach-ff', type: 'spotlight', target: '[data-tutorial="items-list"]', position: 'bottom',
     title: 'Attach Form Factor',
     description: 'Find the test powder row and click the "FF" button to attach form factors.',
     instruction: 'Click the FF button on the test powder row' },

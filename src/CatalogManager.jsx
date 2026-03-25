@@ -464,8 +464,6 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
                       <th className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Location</th>
                       <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Min Stock</th>
                       <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Max Stock</th>
-                      <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Conditions</th>
-                      <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Reorder Trigger</th>
                       <th className="py-3 px-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Actions</th>
                     </tr>
                   </thead>
@@ -477,18 +475,6 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
                         </td>
                         <td className="py-3 px-3 text-sm" style={{ color: '#64748B' }}>{policy.minStock.toLocaleString()}</td>
                         <td className="py-3 px-3 text-sm" style={{ color: '#64748B' }}>{policy.maxStock.toLocaleString()}</td>
-                        <td className="py-3 px-3">
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-medium"
-                            style={{
-                              backgroundColor: policy.conditions === 'Refrigerated' ? '#EFF6FF' : policy.conditions === 'Frozen' ? '#F0F9FF' : '#F0FDF4',
-                              color: policy.conditions === 'Refrigerated' ? '#3B82F6' : policy.conditions === 'Frozen' ? '#0EA5E9' : '#10B981',
-                            }}
-                          >
-                            {policy.conditions}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-sm" style={{ color: '#64748B' }}>{policy.reorderTrigger.toLocaleString()}</td>
                         <td className="py-3 px-3">
                           <div className="flex items-center justify-end gap-1">
                             <button
