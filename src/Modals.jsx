@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Plus, Trash2, Loader2, Check, ChevronDown } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, Check, ChevronDown, MapPin } from 'lucide-react';
 
 // ── Modal Shell ───────────────────────────────────────────────────
 
@@ -215,11 +215,12 @@ function ShimmerField() {
 // ── PurchaseLotsModal ───────────────────────────────────────────────
 
 function makeEntry() {
-  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), batchId: 'B-' + Date.now().toString(36).toUpperCase(), qty: '', buyInPrice: '' };
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), batchId: 'B-' + Date.now().toString(36).toUpperCase(), qty: '', totalPrice: '' };
 }
 
-export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, onSubmit, onClose }) {
-  const [formFactor, setFormFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
+export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, locations, onSubmit, onClose }) {
+  const [formFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
+  const [locationId, setLocationId] = useState('');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
   const [attrValues, setAttrValues] = useState({});
@@ -281,7 +282,8 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
         id: e.batchId,
         formFactor,
         qty: parseInt(e.qty, 10),
-        buyInPrice: parseFloat(e.buyInPrice) || 0,
+        buyInPrice: e.qty ? (parseFloat(e.totalPrice) || 0) / parseInt(e.qty, 10) : 0,
+        locationId,
         attributes: attrValues,
         highlightNew: true,
       }));
@@ -309,13 +311,14 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       </FormField>
 
       <FormField label="Form Factor" required>
-        <SelectInput value={formFactor} onChange={e => setFormFactor(e.target.value)}>
-          <option value="">Select form factor...</option>
-          {(item?.formFactors && item.formFactors.length > 0
-            ? item.formFactors
-            : (category?.formFactors || []).map(ff => ff.name)
-          ).map(ffName => (
-            <option key={ffName} value={ffName}>{ffName}</option>
+        <ReadOnlyField value={formFactor} />
+      </FormField>
+
+      <FormField label="Location" required>
+        <SelectInput value={locationId} onChange={e => setLocationId(e.target.value)}>
+          <option value="">Select location...</option>
+          {(locations || []).map(loc => (
+            <option key={loc.id} value={loc.id}>{loc.name}</option>
           ))}
         </SelectInput>
       </FormField>
@@ -416,15 +419,15 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
                   step="1"
                 />
               </FormField>
-              <FormField label="Buy-in Price" hint="Per unit">
+              <FormField label="Total Price">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
                   <input
                     type="number"
                     className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
                     style={{ borderColor: '#E2E8F0' }}
-                    value={entry.buyInPrice}
-                    onChange={e => updateEntry(entry.id, 'buyInPrice', e.target.value)}
+                    value={entry.totalPrice}
+                    onChange={e => updateEntry(entry.id, 'totalPrice', e.target.value)}
                     placeholder="0.00"
                     min="0"
                     step="0.01"
@@ -461,7 +464,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       <SubmitButton
         loading={submitting}
         onClick={handleSubmit}
-        disabled={!formFactor || !entries.some(e => e.batchId && e.qty)}
+        disabled={!formFactor || !locationId || !entries.some(e => e.batchId && e.qty)}
       >
         Purchase Lots
       </SubmitButton>
@@ -893,7 +896,7 @@ export function AddLocationModal({ locations, existingLocation, onSubmit, onClos
 
 // ── LotTransactionHistoryModal ────────────────────────────────────
 
-export function LotTransactionHistoryModal({ lot, onClose }) {
+export function LotTransactionHistoryModal({ lot, locations, onClose }) {
   const panelRef = useRef(null);
   const previousFocusRef = useRef(null);
 
@@ -979,6 +982,28 @@ export function LotTransactionHistoryModal({ lot, onClose }) {
                 Qty: {lot.qty.toLocaleString()}
               </span>
             </div>
+            {lot.locationId && locations && (
+              <div className="flex items-center gap-1 mt-1">
+                <MapPin size={11} style={{ color: '#6366F1' }} />
+                <span className="text-xs" style={{ color: '#64748B' }}>
+                  {locations.find(l => l.id === lot.locationId)?.name ?? lot.locationId}
+                </span>
+              </div>
+            )}
+            {lot.attributes && Object.keys(lot.attributes).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {Object.entries(lot.attributes).map(([key, val]) => (
+                  <span
+                    key={key}
+                    className="text-xs px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
+                  >
+                    <span style={{ color: '#94A3B8' }}>{key}:</span>{' '}
+                    <span style={{ color: '#475569' }}>{String(val)}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <button
             className="p-1.5 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"

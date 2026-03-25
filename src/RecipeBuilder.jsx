@@ -18,9 +18,6 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
   }
 
   const selectedItem = allItems.find(i => i.id === itemId);
-  const selectedCategory = selectedItem
-    ? data.categories.find(c => c.id === selectedItem.categoryId)
-    : null;
 
   useEffect(() => {
     if (popoverRef.current) {
@@ -92,11 +89,11 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
             style={{ borderColor: '#E2E8F0' }}
             value={formFactor}
             onChange={e => setFormFactor(e.target.value)}
-            disabled={!selectedCategory}
+            disabled={!selectedItem}
           >
             <option value="">Select form factor...</option>
-            {selectedCategory?.formFactors.map(ff => (
-              <option key={ff.name} value={ff.name}>{ff.name}</option>
+            {selectedItem?.formFactors.map(ff => (
+              <option key={ff} value={ff}>{ff}</option>
             ))}
           </select>
         </div>
@@ -139,10 +136,7 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
 
 // ── Destination Node Popover (output only — item is pre-fixed) ─────
 
-function DestNodePopover({ node, item, data, onSave, onClose }) {
-  // Find the category that contains this item
-  const itemCategory = data.categories.find(cat => cat.items.some(i => i.id === item.id));
-
+function DestNodePopover({ node, item, onSave, onClose }) {
   const [formFactor, setFormFactor] = useState(node?.formFactor || '');
   const [qty, setQty] = useState(node?.qty || 1);
   const popoverRef = useRef(null);
@@ -204,8 +198,8 @@ function DestNodePopover({ node, item, data, onSave, onClose }) {
             onChange={e => setFormFactor(e.target.value)}
           >
             <option value="">Select form factor...</option>
-            {itemCategory?.formFactors.map(ff => (
-              <option key={ff.name} value={ff.name}>{ff.name}</option>
+            {item.formFactors.map(ff => (
+              <option key={ff} value={ff}>{ff}</option>
             ))}
           </select>
         </div>
@@ -382,7 +376,6 @@ function DestinationCard({ output, item, data, onEdit }) {
         <DestNodePopover
           node={output}
           item={item}
-          data={data}
           onSave={(updated) => { onEdit(updated); setShowPopover(false); }}
           onClose={() => setShowPopover(false)}
         />
@@ -394,11 +387,11 @@ function DestinationCard({ output, item, data, onEdit }) {
 // ── RecipeBuilder (main) ──────────────────────────────────────────
 
 export default function RecipeBuilder({ item, initialRecipe, data, onSave, onClose }) {
-  const [name, setName] = useState(initialRecipe?.name || '');
+  const recipeName = item.name + ' recipe';
   const [sources, setSources] = useState(initialRecipe?.sources || []);
   const [output, setOutput] = useState(initialRecipe?.output || null);
 
-  const canSave = name.trim().length > 0 && sources.length >= 1 && output !== null;
+  const canSave = sources.length >= 1 && output !== null;
 
   const handleAddSource = (node) => {
     setSources(prev => [...prev, node]);
@@ -420,7 +413,7 @@ export default function RecipeBuilder({ item, initialRecipe, data, onSave, onClo
     if (!canSave) return;
     const recipeToSave = {
       id: initialRecipe?.id || 'r-' + Date.now().toString(36),
-      name: name.trim(),
+      name: recipeName,
       sources,
       output,
     };
@@ -449,21 +442,9 @@ export default function RecipeBuilder({ item, initialRecipe, data, onSave, onClo
             ← Back
           </button>
           <span className="text-slate-300">|</span>
-          <div className="flex flex-col">
-            <span className="text-xs" style={{ color: '#94A3B8' }}>
-              Recipe for <span style={{ color: '#6366F1', fontWeight: 500 }}>{item?.name}</span>
-            </span>
-            <input
-              type="text"
-              className="text-base font-semibold outline-none bg-transparent border-b-2 transition-all duration-150 focus:border-indigo-400"
-              style={{ color: '#1E1B4B', borderBottomColor: name ? 'transparent' : '#E2E8F0', minWidth: '200px' }}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Recipe name..."
-              onFocus={e => { e.target.style.borderBottomColor = '#6366F1'; }}
-              onBlur={e => { e.target.style.borderBottomColor = name ? 'transparent' : '#E2E8F0'; }}
-            />
-          </div>
+          <span className="text-base font-semibold" style={{ color: '#1E1B4B' }}>
+            {recipeName}
+          </span>
         </div>
         <button
           className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"

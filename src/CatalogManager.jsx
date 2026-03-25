@@ -533,7 +533,7 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
 
 // ── Item-Form-Factor Tab ──────────────────────────────────────────
 
-function FormFactorGroupRow({ item, ffName, category, onOpenModal, onUpdateLot }) {
+function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, onUpdateLot }) {
   const [expanded, setExpanded] = useState(true);
   const [editingLotId, setEditingLotId] = useState(null);
   const [editQty, setEditQty] = useState('');
@@ -631,6 +631,14 @@ function FormFactorGroupRow({ item, ffName, category, onOpenModal, onUpdateLot }
                     </span>
                   )}
                   <div className="ml-auto flex items-center gap-2">
+                    {lot.locationId && (() => {
+                      const loc = locations?.find(l => l.id === lot.locationId);
+                      return loc ? (
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
+                          {loc.name}
+                        </span>
+                      ) : null;
+                    })()}
                     <span className="text-xs" style={{ color: '#94A3B8' }}>Qty:</span>
                     {editingLotId === lot.id ? (
                       <input
@@ -666,22 +674,6 @@ function FormFactorGroupRow({ item, ffName, category, onOpenModal, onUpdateLot }
                     )}
                   </div>
                 </div>
-
-                {/* Row 2: attribute chips */}
-                {lot.attributes && Object.keys(lot.attributes).length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 ml-1">
-                    {Object.entries(lot.attributes).map(([key, val]) => (
-                      <span
-                        key={key}
-                        className="text-xs px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
-                      >
-                        <span style={{ color: '#94A3B8' }}>{key}:</span>{' '}
-                        <span style={{ color: '#475569' }}>{String(val)}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             ))
           )}
@@ -751,6 +743,7 @@ function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
                     item={item}
                     ffName={ffName}
                     category={category}
+                    locations={data.locations}
                     onOpenModal={onOpenModal}
                     onUpdateLot={(lot) => onUpdate.updateLot({ categoryId: category.id, itemId: item.id, lot })}
                   />

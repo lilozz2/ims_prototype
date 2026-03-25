@@ -14,8 +14,6 @@ const INITIAL_DATA = {
       formFactors: [
         { name: '2.5kg bag' },
         { name: '200L drum' },
-        { name: '1L bottle' },
-        { name: '5L Jerry can' },
       ],
       items: [
         {
@@ -170,6 +168,36 @@ const INITIAL_DATA = {
           warehousePolicies: [],
           recipe: null,
         },
+      ],
+      attributeSchemas: [
+        {
+          id: 'as-1',
+          itemId: 'powder-001',
+          formFactor: '2.5kg bag',
+          fields: [
+            { name: 'Manufacturing date', type: 'date',   required: true },
+            { name: 'Production batch',   type: 'number', required: true },
+          ],
+        },
+        {
+          id: 'as-2',
+          itemId: 'solvent-001',
+          formFactor: '200L drum',
+          fields: [
+            { name: 'Manufacturing date', type: 'date', required: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'finished-goods',
+      name: 'Finished Goods',
+      formFactors: [
+        { name: '200L drum' },
+        { name: '1L bottle' },
+        { name: '5L Jerry can' },
+      ],
+      items: [
         {
           id: 'marker-001',
           name: 'marker solution',
@@ -294,23 +322,6 @@ const INITIAL_DATA = {
         },
       ],
       attributeSchemas: [
-        {
-          id: 'as-1',
-          itemId: 'powder-001',
-          formFactor: '2.5kg bag',
-          fields: [
-            { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'Production batch',   type: 'number', required: true },
-          ],
-        },
-        {
-          id: 'as-2',
-          itemId: 'solvent-001',
-          formFactor: '200L drum',
-          fields: [
-            { name: 'Manufacturing date', type: 'date', required: true },
-          ],
-        },
         {
           id: 'as-4',
           itemId: 'marker-001',
@@ -845,6 +856,7 @@ export default function App() {
           item={payload.item}
           preselectedFormFactor={payload.formFactor || ''}
           uomLabel={uomLabel}
+          locations={data.locations}
           onSubmit={(lots) => handleCreateLots({ categoryId: payload.categoryId, itemId: payload.item.id, lots })}
           onClose={closeModal}
         />
@@ -973,6 +985,7 @@ export default function App() {
       return (
         <LotTransactionHistoryModal
           lot={payload.lot}
+          locations={data.locations}
           onClose={closeModal}
         />
       );
