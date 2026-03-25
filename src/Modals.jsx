@@ -1030,7 +1030,14 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
           ) : (
             <div className="space-y-2">
               {transactions.map(txn => {
-                const isBuyIn = txn.type === 'buy-in';
+                const txTypeMap = {
+                  'buy-in':         { label: 'Buy-in',     bg: '#6366F1', fg: '#fff'    },
+                  'produce':        { label: 'Produce',    bg: '#10B981', fg: '#fff'    },
+                  'draw-down':      { label: 'Draw Down',  bg: '#8B5CF6', fg: '#fff'    },
+                  'production-use': { label: 'Production', bg: '#F59E0B', fg: '#1C1917' },
+                };
+                const txStyle = txTypeMap[txn.type] || { label: txn.type, bg: '#E2E8F0', fg: '#64748B' };
+                const isInflow = txn.qtyChange >= 0;
                 return (
                   <div
                     key={txn.id}
@@ -1040,19 +1047,15 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className="text-xs px-2 py-0.5 rounded font-medium flex-shrink-0"
-                          style={
-                            isBuyIn
-                              ? { backgroundColor: '#6366F1', color: '#fff' }
-                              : { backgroundColor: '#F59E0B', color: '#1C1917' }
-                          }
+                          style={{ backgroundColor: txStyle.bg, color: txStyle.fg }}
                         >
-                          {isBuyIn ? 'Buy-in' : 'Production'}
+                          {txStyle.label}
                         </span>
                         <span className="text-xs" style={{ color: '#94A3B8' }}>
                           {new Date(txn.timestamp).toLocaleString()}
                         </span>
                       </div>
-                      {!isBuyIn && txn.reference && (
+                      {txn.type === 'production-use' && txn.reference && (
                         <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
                           Ref:{' '}
                           <span style={{ fontFamily: 'monospace', color: '#1E1B4B' }}>
@@ -1060,9 +1063,9 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                           </span>
                         </p>
                       )}
-                      {isBuyIn && txn.buyInPrice != null && (
+                      {isInflow && txn.buyInPrice != null && (
                         <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
-                          Buy-in price: <span style={{ color: '#10B981', fontWeight: 500 }}>${txn.buyInPrice?.toFixed(2) ?? '—'}</span>
+                          Unit price: <span style={{ color: '#10B981', fontWeight: 500 }}>${txn.buyInPrice?.toFixed(2) ?? '—'}</span>
                         </p>
                       )}
                     </div>
@@ -1179,7 +1182,7 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
 
 const makeRowId = () => Math.random().toString(36).slice(2, 8);
 
-export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
+export function ExecutionModal({ item, recipe, data, executionType = 'produce', onExecute, onClose }) {
   const initSegments = () =>
     Object.fromEntries((recipe?.sources || []).map(src => [
       src.id,
@@ -1274,6 +1277,23 @@ export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
     setSubmitting(true);
     setTimeout(() => {
       const now = Date.now();
+
+      // Compute total source cost for buy-in price derivation
+      const findLot = (lotId) => {
+        for (const cat of data.categories) {
+          for (const itm of cat.items) {
+            const lot = itm.lots.find(l => l.id === lotId);
+            if (lot) return lot;
+          }
+        }
+        return null;
+      };
+      const allUsages = Object.values(sourceRowsBySegment).flat().filter(r => r.lotId && r.qtyToUse > 0);
+      const totalSourceCost = allUsages.reduce((sum, r) => {
+        const lot = findLot(r.lotId);
+        return sum + r.qtyToUse * (lot?.buyInPrice || 0);
+      }, 0);
+
       const newLots = destRows
         .filter(r => parseInt(r.qty, 10) > 0)
         .map((r, i) => {
@@ -1282,13 +1302,13 @@ export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
             id: batchId,
             formFactor: recipe.output.formFactor,
             qty: parseInt(r.qty, 10),
-            buyInPrice: 0,
+            buyInPrice: parseInt(r.qty, 10) > 0 ? totalSourceCost / parseInt(r.qty, 10) : 0,
             locationId,
             attributes: { ...attrValues },
             highlightNew: true,
             transactions: [{
               id: `TXN-${now}-dest-${i}`,
-              type: 'buy-in',
+              type: executionType,
               timestamp: new Date().toISOString(),
               qtyChange: parseInt(r.qty, 10),
               reference: null,
@@ -1308,7 +1328,7 @@ export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
   };
 
   return (
-    <ModalShell title={`Produce — ${item?.name}`} onClose={onClose}>
+    <ModalShell title={`${executionType === 'draw-down' ? 'Draw Down' : 'Produce'} — ${item?.name}`} onClose={onClose}>
       {/* Location selector */}
       <FormField label="Location" required>
         <SelectInput
@@ -1502,12 +1522,80 @@ export function ExecutionModal({ item, recipe, data, onExecute, onClose }) {
         </button>
       </div>
 
+      {/* Status section */}
+      {(() => {
+        const destTotal = destRows.reduce((sum, r) => sum + (parseInt(r.qty, 10) || 0), 0);
+        return (
+          <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+              Status
+            </p>
+
+            {/* Destination total row */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>{item?.name}</span>
+                <span className="text-xs ml-1" style={{ color: '#64748B' }}>• {recipe?.output?.formFactor}</span>
+              </div>
+              <span className="text-sm font-bold font-mono" style={{ color: destTotal > 0 ? '#1E1B4B' : '#CBD5E1' }}>
+                {destTotal > 0 ? destTotal : '—'}
+              </span>
+            </div>
+
+            {/* Per-source rows */}
+            <div className="space-y-3">
+              {(recipe?.sources || []).map(src => {
+                const actualQty = (sourceRowsBySegment[src.id] || []).reduce((sum, r) => sum + (r.qtyToUse || 0), 0);
+                const expectedQty = recipe.output.qty > 0 ? (src.qty / recipe.output.qty) * destTotal : 0;
+                const variation = actualQty - expectedQty;
+                const variationPct = (destTotal > 0 && expectedQty > 0) ? (variation / expectedQty) * 100 : null;
+                const absPct = variationPct !== null ? Math.abs(variationPct) : null;
+                const badgeStyle = absPct === null ? null
+                  : absPct === 0   ? { color: '#10B981', backgroundColor: '#ECFDF5' }
+                  : absPct <= 10   ? { color: '#B45309', backgroundColor: '#FFFBEB' }
+                  :                  { color: '#DC2626', backgroundColor: '#FEF2F2' };
+                const fmtNum = (n) => Number.isInteger(n) ? n : n.toFixed(1).replace(/\.0$/, '');
+
+                return (
+                  <div key={src.id}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: '#1E1B4B' }}>
+                      {getItemName(src.itemId)}
+                      <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
+                    </p>
+                    <div className="flex items-center gap-3 text-xs flex-wrap">
+                      <span style={{ color: '#64748B' }}>
+                        Expected{' '}
+                        <span className="font-mono font-semibold" style={{ color: '#1E1B4B' }}>
+                          {destTotal > 0 ? fmtNum(expectedQty) : '—'}
+                        </span>
+                      </span>
+                      <span style={{ color: '#64748B' }}>
+                        Actual{' '}
+                        <span className="font-mono font-semibold" style={{ color: '#1E1B4B' }}>
+                          {actualQty > 0 ? actualQty : '—'}
+                        </span>
+                      </span>
+                      {badgeStyle && (
+                        <span className="px-1.5 py-0.5 rounded font-semibold" style={badgeStyle}>
+                          {variation >= 0 ? '+' : ''}{fmtNum(variation)}
+                          {' '}({variationPct >= 0 ? '+' : ''}{variationPct.toFixed(1)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <SubmitButton
         loading={submitting}
         onClick={handleExecute}
         disabled={!canSubmit}
       >
-        Produce
+        {executionType === 'draw-down' ? 'Draw Down' : 'Produce'}
       </SubmitButton>
     </ModalShell>
   );

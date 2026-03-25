@@ -978,11 +978,14 @@ export default function App() {
       );
     }
     if (type === 'produceLot') {
+      const ffType = payload.item.formFactorTypes?.[payload.formFactor];
+      const executionType = ffType === 'To Draw Down' ? 'draw-down' : 'produce';
       return (
         <ExecutionModal
           item={payload.item}
           recipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
           data={data}
+          executionType={executionType}
           onExecute={(execPayload) => handleExecuteRecipe({ ...execPayload, categoryId: payload.categoryId, item: payload.item })}
           onClose={closeModal}
         />
