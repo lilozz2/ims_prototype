@@ -410,7 +410,6 @@ export function LocationsSection({ locations, onUpdate, onOpenModal }) {
 
 const subSections = [
   { id: 'uom', label: 'Units of Measure' },
-  { id: 'conversions', label: 'UoM Conversions' },
   { id: 'locations', label: 'Locations' },
 ];
 

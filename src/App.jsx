@@ -1091,9 +1091,8 @@ export default function App() {
             Configuration
           </p>
           {[
-            { id: '__uom',         label: 'Units of Measure', Icon: Ruler,          tutorialId: 'sidebar-uom'       },
-            { id: '__conversions', label: 'UoM Conversions',  Icon: ArrowLeftRight,  tutorialId: undefined           },
-            { id: '__locations',   label: 'Locations',         Icon: MapPin,          tutorialId: 'sidebar-locations' },
+            { id: '__uom',       label: 'Units of Measure', Icon: Ruler,  tutorialId: 'sidebar-uom'       },
+            { id: '__locations', label: 'Locations',         Icon: MapPin, tutorialId: 'sidebar-locations' },
           ].map(({ id, label, Icon, tutorialId }) => {
             const isActive = selectedCategoryId === id;
             return (
