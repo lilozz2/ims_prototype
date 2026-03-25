@@ -64,7 +64,7 @@ function ItemsTab({ category, uom, onUpdate, onOpenModal }) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div data-tutorial="items-list" className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {category.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-6" style={{ color: '#64748B' }}>
             <Package size={40} className="mb-3 opacity-30" />
@@ -524,7 +524,7 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
 
 // ── Item-Form-Factor Tab ──────────────────────────────────────────
 
-function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, onUpdateLot }) {
+function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOpenModal, onUpdateLot }) {
   const [expanded, setExpanded] = useState(true);
   const [editingLotId, setEditingLotId] = useState(null);
   const [editQty, setEditQty] = useState('');
@@ -537,6 +537,8 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
     return next;
   });
   const ffLots = (item.lots || []).filter(lot => lot.formFactor === ffName);
+  const attributeSchema = (category.attributeSchemas || [])
+    .find(s => s.itemId === item.id && s.formFactor === ffName) || null;
 
   const startQtyEdit = (lot, e) => {
     e.stopPropagation();
@@ -666,7 +668,16 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                 {/* Row 1: identifiers + qty/price */}
                 <div
                   className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => editingLotId !== lot.id && onOpenModal('lotHistory', { lot })}
+                  onClick={() =>
+                    editingLotId !== lot.id &&
+                    onOpenModal('lotHistory', {
+                      lot,
+                      categoryId: category.id,
+                      itemId: item.id,
+                      uomSymbol,
+                      attributeSchema,
+                    })
+                  }
                 >
                   <input
                     type="checkbox"
@@ -720,6 +731,9 @@ function FormFactorGroupRow({ item, ffName, category, locations, onOpenModal, on
                         onClick={e => startQtyEdit(lot, e)}
                       >
                         {(lot.qty || 0).toLocaleString()}
+                        {uomSymbol && (
+                          <span className="ml-0.5" style={{ color: '#94A3B8', fontWeight: 400 }}>{uomSymbol}</span>
+                        )}
                       </span>
                     )}
                     {lot.buyInPrice > 0 && (
@@ -846,6 +860,7 @@ function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
                     ffName={ffName}
                     category={category}
                     locations={data.locations}
+                    uomSymbol={getUomSymbol(item.uomId)}
                     onOpenModal={onOpenModal}
                     onUpdateLot={(lot) => onUpdate.updateLot({ categoryId: category.id, itemId: item.id, lot })}
                   />

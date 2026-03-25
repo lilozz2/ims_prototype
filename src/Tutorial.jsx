@@ -601,7 +601,7 @@ export const SETUP_TUTORIAL_STEPS = [
   // 6 — auto when locationCount > init
   { id: 'setup-fill-location', type: 'corner', title: 'Create testLocation',
     description: 'Fill in the location details.',
-    bullets: ['Name: testLocation', 'Type: warehouse (or any)'],
+    bullets: ['Name: testLocation', 'Type: warehouse (or any)', 'Capacity: 5000'],
     instruction: 'Fill in the form, then click Save' },
   // 7 — auto when selectedCategoryId === 'ingredients'
   { id: 'setup-nav-category', type: 'spotlight', target: '[data-tutorial="sidebar-ingredients"]', position: 'right',
@@ -612,9 +612,9 @@ export const SETUP_TUTORIAL_STEPS = [
     title: 'Go to Form Factors Tab', description: 'Form factors define the packaging format of an item (e.g. bag, drum, can).',
     instruction: 'Click the "Form Factors" tab' },
   // 9 — auto when ffCount > init
-  { id: 'setup-add-ff', type: 'spotlight', target: '[data-tutorial="add-formfactor-btn"]', position: 'bottom',
+  { id: 'setup-add-ff', type: 'spotlight', target: '[data-tutorial="add-formfactor-btn"]', position: 'top',
     title: 'Create a Form Factor', description: 'Click Add, enter "testFormFactor" as the name, then Save.',
-    instruction: 'Click Add, type "testFormFactor", then Save' },
+    instruction: 'Click Add, type "testFormFactor", then Add' },
   // 10 — auto when managerActiveTab === 'items'
   { id: 'setup-go-items-tab', type: 'spotlight', target: '[data-tutorial="tab-items"]', position: 'bottom',
     title: 'Go to Items Tab', description: 'Now create the item that will use testUoM.',
@@ -626,10 +626,11 @@ export const SETUP_TUTORIAL_STEPS = [
   // 12 — auto when itemCount > init
   { id: 'setup-fill-item', type: 'corner', title: 'Fill in Item Details',
     description: 'Enter the item details, including the UoM you just created.',
-    bullets: ['Name: test powder', 'UoM: testUoM'],
+    bullets: ['Name: test powder', 'SKU: PW-001', 'UoM: testUoM', 'Default form factor: testFormFactor'],
     instruction: 'Fill in the fields above, then click Save' },
   // 13 — auto when activeModal?.type === 'attachFormFactors'
-  { id: 'setup-attach-ff', type: 'corner', title: 'Attach Form Factor',
+  { id: 'setup-attach-ff', type: 'spotlight', target: '[data-tutorial="items-list"]', position: 'right',
+    title: 'Attach Form Factor',
     description: 'Find the test powder row and click the "FF" button to attach form factors.',
     instruction: 'Click the FF button on the test powder row' },
   // 14 — showNext
@@ -644,11 +645,11 @@ export const SETUP_TUTORIAL_STEPS = [
   { id: 'setup-add-schema', type: 'spotlight', target: '[data-tutorial="add-schema-btn"]', position: 'bottom',
     title: 'Add an Attribute Schema', description: 'Define attributes for test powder / testFormFactor.',
     instruction: 'Click "Add Schema"' },
-  // 17 — showNext
+  // 17 — auto when schemaCount > init
   { id: 'setup-fill-schema', type: 'corner', title: 'Define Attribute Fields',
     description: 'Add two fields to capture lot-level metadata.',
-    bullets: ['Field 1 — Name: Manufacturing Date, Type: date', 'Field 2 — Name: Batch Number, Type: text'],
-    instruction: 'Add both fields, then click Save', showNext: true },
+    bullets: ['Item - test powder', 'Form Factor - testFormFactor', 'Field 1 — Name: Manufacturing Date, Type: date', 'Field 2 — Name: Batch Number, Type: text'],
+    instruction: 'Add both fields, then click Save' },
   // 18 — auto when managerActiveTab === 'policies'
   { id: 'setup-go-policies-tab', type: 'spotlight', target: '[data-tutorial="tab-policies"]', position: 'bottom',
     title: 'Go to Warehouse Policy', description: 'Warehouse policies define stock rules per location for this item.',
@@ -657,11 +658,11 @@ export const SETUP_TUTORIAL_STEPS = [
   { id: 'setup-add-policy', type: 'spotlight', target: '[data-tutorial="add-policy-btn"]', position: 'bottom',
     title: 'Add a Warehouse Policy', description: 'Define minimum and maximum stock levels for test powder at testLocation.',
     instruction: 'Click "Add Policy"' },
-  // 20 — showNext
+  // 20 — auto when policyCount > init
   { id: 'setup-fill-policy', type: 'corner', title: 'Fill in Policy Values',
     description: 'Set arbitrary stock limits for test powder at testLocation.',
-    bullets: ['Location: testLocation', 'Min Stock: 10', 'Max Stock: 100', 'Conditions: Room Temperature'],
-    instruction: 'Fill in the fields above, then click Save', showNext: true },
+    bullets: ['Location: testLocation', 'Min Stock: 10', 'Max Stock: 100'],
+    instruction: 'Fill in the fields above, then click Save' },
   // 21 — auto when managerActiveTab === 'itemFF'
   { id: 'setup-go-itemff-tab', type: 'spotlight', target: '[data-tutorial="tab-itemFF"]', position: 'bottom',
     title: 'Items & Lots', description: 'Go to Items & Lots to see your fully configured item.',

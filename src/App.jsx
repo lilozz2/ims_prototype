@@ -188,7 +188,7 @@ const INITIAL_DATA = {
                 },
                 {
                   id: 'TXN-MKR-J2402-002',
-                  type: 'production-use',
+                  type: 'adjust',
                   timestamp: '2025-03-05T14:00:00.000Z',
                   qtyChange: -5,
                   reference: 'PROD-004',
@@ -329,10 +329,14 @@ export default function App() {
         // 14: showNext
         case 15: if (managerActiveTab === 'schemas') advance(); break;
         case 16: if (activeModal?.type === 'addSchema') advance(); break;
-        // 17: showNext
+        case 17: if ((ingr?.attributeSchemas?.length ?? 0) > init.schemaCount) advance(); break;
         case 18: if (managerActiveTab === 'policies') advance(); break;
         case 19: if (activeModal?.type === 'addPolicy') advance(); break;
-        // 20: showNext
+        case 20: {
+          const totalPolicies = ingr?.items?.reduce((sum, i) => sum + (i.warehousePolicies?.length ?? 0), 0) ?? 0;
+          if (totalPolicies > init.policyCount) advance();
+          break;
+        }
         case 21: if (managerActiveTab === 'itemFF') advance(); break;
         default: break;
       }
@@ -813,6 +817,7 @@ export default function App() {
         <AddItemModal
           category={data.categories.find(c => c.id === payload.categoryId)}
           existingItem={null}
+          uomList={data.uom}
           onSubmit={(item) => handleAddItem({ categoryId: payload.categoryId, item })}
           onClose={closeModal}
         />
@@ -823,6 +828,7 @@ export default function App() {
         <AddItemModal
           category={data.categories.find(c => c.id === payload.categoryId)}
           existingItem={payload.item}
+          uomList={data.uom}
           onSubmit={(item) => handleEditItem({ categoryId: payload.categoryId, item })}
           onClose={closeModal}
         />
@@ -954,6 +960,11 @@ export default function App() {
         <LotTransactionHistoryModal
           lot={payload.lot}
           locations={data.locations}
+          uomSymbol={payload.uomSymbol}
+          attributeSchema={payload.attributeSchema}
+          onUpdateLot={(lot) =>
+            handleUpdateLot({ categoryId: payload.categoryId, itemId: payload.itemId, lot })
+          }
           onClose={closeModal}
         />
       );
@@ -1006,6 +1017,8 @@ export default function App() {
                     locationCount: data.locations.length,
                     ffCount: ingr?.formFactors?.length ?? 0,
                     itemCount: ingr?.items?.length ?? 0,
+                    schemaCount: ingr?.attributeSchemas?.length ?? 0,
+                    policyCount: ingr?.items?.reduce((sum, i) => sum + (i.warehousePolicies?.length ?? 0), 0) ?? 0,
                   };
                   setTutorialType('setup');
                   setTutorialStep(0);

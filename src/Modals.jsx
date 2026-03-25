@@ -476,10 +476,11 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
 
 // ── AddItemModal / EditItemModal ──────────────────────────────────
 
-export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
+export function AddItemModal({ category, existingItem, uomList = [], onSubmit, onClose }) {
   const isEdit = !!existingItem;
   const [name, setName] = useState(existingItem?.name || '');
   const [sku, setSku] = useState(existingItem?.sku || '');
+  const [uomId, setUomId] = useState(existingItem?.uomId || '');
   const [defaultFormFactor, setDefaultFormFactor] = useState(existingItem?.defaultFormFactor || '');
   const [submitting, setSubmitting] = useState(false);
 
@@ -488,12 +489,12 @@ export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
     setSubmitting(true);
     setTimeout(() => {
       const item = isEdit
-        ? { ...existingItem, name: name.trim(), sku: sku.trim(), defaultFormFactor }
+        ? { ...existingItem, name: name.trim(), sku: sku.trim(), uomId, defaultFormFactor }
         : {
             id: 'item-' + Date.now().toString(36),
             name: name.trim(),
             sku: sku.trim(),
-            uomId: '',
+            uomId,
             formFactors: [],
             defaultFormFactor,
             lots: [],
@@ -521,6 +522,15 @@ export function AddItemModal({ category, existingItem, onSubmit, onClose }) {
           onChange={e => setSku(e.target.value)}
           placeholder="e.g. BW-001"
         />
+      </FormField>
+
+      <FormField label="Unit of Measure">
+        <SelectInput value={uomId} onChange={e => setUomId(e.target.value)}>
+          <option value="">— Select UoM —</option>
+          {uomList.map(u => (
+            <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
+          ))}
+        </SelectInput>
       </FormField>
 
       <FormField label="Default Form Factor">
@@ -707,12 +717,10 @@ export function AddPolicyModal({ locations, item, existingPolicy, onSubmit, onCl
   const [locationId, setLocationId] = useState(existingPolicy?.locationId || '');
   const [minStock, setMinStock] = useState(existingPolicy?.minStock?.toString() || '');
   const [maxStock, setMaxStock] = useState(existingPolicy?.maxStock?.toString() || '');
-  const [conditions, setConditions] = useState(existingPolicy?.conditions || 'Ambient');
-  const [reorderTrigger, setReorderTrigger] = useState(existingPolicy?.reorderTrigger?.toString() || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = () => {
-    if (!locationId || !minStock || !maxStock || !reorderTrigger) return;
+    if (!locationId || !minStock || !maxStock) return;
     setSubmitting(true);
     setTimeout(() => {
       const policy = isEdit
@@ -721,16 +729,12 @@ export function AddPolicyModal({ locations, item, existingPolicy, onSubmit, onCl
             locationId,
             minStock: parseInt(minStock, 10),
             maxStock: parseInt(maxStock, 10),
-            conditions,
-            reorderTrigger: parseInt(reorderTrigger, 10),
           }
         : {
             id: 'wp-' + Date.now().toString(36),
             locationId,
             minStock: parseInt(minStock, 10),
             maxStock: parseInt(maxStock, 10),
-            conditions,
-            reorderTrigger: parseInt(reorderTrigger, 10),
           };
       onSubmit(policy);
       setSubmitting(false);
@@ -783,29 +787,10 @@ export function AddPolicyModal({ locations, item, existingPolicy, onSubmit, onCl
         </FormField>
       </div>
 
-      <FormField label="Storage Conditions" required>
-        <SelectInput value={conditions} onChange={e => setConditions(e.target.value)}>
-          <option value="Ambient">Ambient</option>
-          <option value="Refrigerated">Refrigerated</option>
-          <option value="Frozen">Frozen</option>
-          <option value="Custom">Custom</option>
-        </SelectInput>
-      </FormField>
-
-      <FormField label="Reorder Trigger" required hint="Stock level that triggers a reorder">
-        <NumberInput
-          value={reorderTrigger}
-          onChange={e => setReorderTrigger(e.target.value)}
-          placeholder="0"
-          min="0"
-          step="1"
-        />
-      </FormField>
-
       <SubmitButton
         loading={submitting}
         onClick={handleSubmit}
-        disabled={!locationId || !minStock || !maxStock || !reorderTrigger}
+        disabled={!locationId || !minStock || !maxStock}
       >
         {isEdit ? 'Save Policy' : 'Add Policy'}
       </SubmitButton>
@@ -898,9 +883,41 @@ export function AddLocationModal({ locations, existingLocation, onSubmit, onClos
 
 // ── LotTransactionHistoryModal ────────────────────────────────────
 
-export function LotTransactionHistoryModal({ lot, locations, onClose }) {
+export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attributeSchema, onUpdateLot, onClose }) {
   const panelRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const [currentLot, setCurrentLot] = useState(lot);
+  const [adjustDelta, setAdjustDelta] = useState('');
+  const [localAttributes, setLocalAttributes] = useState(lot.attributes || {});
+  const [attrDirty, setAttrDirty] = useState(false);
+
+  const handleApplyAdjust = () => {
+    const delta = parseFloat(adjustDelta);
+    if (isNaN(delta) || delta === 0) return;
+    const newQty = Math.max(0, (currentLot.qty || 0) + delta);
+    const newTxn = {
+      id: `TXN-ADJ-${Date.now()}`,
+      type: 'adjust',
+      timestamp: new Date().toISOString(),
+      qtyChange: parseFloat(delta.toFixed(6)),
+      reference: null,
+    };
+    const updated = {
+      ...currentLot,
+      qty: parseFloat(newQty.toFixed(6)),
+      transactions: [...(currentLot.transactions || []), newTxn],
+    };
+    setCurrentLot(updated);
+    if (onUpdateLot) onUpdateLot(updated);
+    setAdjustDelta('');
+  };
+
+  const handleSaveAttributes = () => {
+    const updated = { ...currentLot, attributes: localAttributes };
+    setCurrentLot(updated);
+    if (onUpdateLot) onUpdateLot(updated);
+    setAttrDirty(false);
+  };
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement;
@@ -945,7 +962,7 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
     };
   }, [onClose]);
 
-  const transactions = lot.transactions || [];
+  const transactions = currentLot.transactions || [];
 
   return (
     <>
@@ -976,35 +993,66 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
               {lot.id}
             </h2>
             <div className="flex items-center gap-3 mt-1">
-              <span className="text-xs" style={{ color: '#64748B' }}>{lot.formFactor}</span>
+              <span className="text-xs" style={{ color: '#64748B' }}>{currentLot.formFactor}</span>
               <span
                 className="text-xs font-semibold"
                 style={{ color: '#10B981' }}
               >
-                Qty: {lot.qty.toLocaleString()}
+                Qty: {currentLot.qty.toLocaleString()}{uomSymbol ? ` ${uomSymbol}` : ''}
               </span>
             </div>
-            {lot.locationId && locations && (
+            {currentLot.locationId && locations && (
               <div className="flex items-center gap-1 mt-1">
                 <MapPin size={11} style={{ color: '#6366F1' }} />
                 <span className="text-xs" style={{ color: '#64748B' }}>
-                  {locations.find(l => l.id === lot.locationId)?.name ?? lot.locationId}
+                  {locations.find(l => l.id === currentLot.locationId)?.name ?? currentLot.locationId}
                 </span>
               </div>
             )}
-            {lot.attributes && Object.keys(lot.attributes).length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {Object.entries(lot.attributes).map(([key, val]) => (
-                  <span
-                    key={key}
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
-                  >
-                    <span style={{ color: '#94A3B8' }}>{key}:</span>{' '}
-                    <span style={{ color: '#475569' }}>{String(val)}</span>
-                  </span>
+            {attributeSchema && attributeSchema.fields.length > 0 ? (
+              <div className="mt-2 space-y-1.5">
+                {attributeSchema.fields.map(field => (
+                  <div key={field.name} className="flex items-center gap-2">
+                    <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8', minWidth: 130 }}>
+                      {field.name}:
+                    </span>
+                    <input
+                      type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                      value={localAttributes[field.name] ?? ''}
+                      onChange={e => {
+                        setLocalAttributes(a => ({ ...a, [field.name]: e.target.value }));
+                        setAttrDirty(true);
+                      }}
+                      className="flex-1 px-2 py-0.5 rounded border text-xs outline-none"
+                      style={{ borderColor: '#E2E8F0', color: '#1E1B4B', minWidth: 0 }}
+                    />
+                  </div>
                 ))}
+                {attrDirty && (
+                  <button
+                    onClick={handleSaveAttributes}
+                    className="mt-1 px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors"
+                    style={{ backgroundColor: '#6366F1', color: '#fff' }}
+                  >
+                    Save Attributes
+                  </button>
+                )}
               </div>
+            ) : (
+              currentLot.attributes && Object.keys(currentLot.attributes).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {Object.entries(currentLot.attributes).map(([key, val]) => (
+                    <span
+                      key={key}
+                      className="text-xs px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}
+                    >
+                      <span style={{ color: '#94A3B8' }}>{key}:</span>{' '}
+                      <span style={{ color: '#475569' }}>{String(val)}</span>
+                    </span>
+                  ))}
+                </div>
+              )
             )}
           </div>
           <button
@@ -1015,6 +1063,36 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
             <X size={18} style={{ color: '#64748B' }} />
           </button>
         </div>
+
+        {/* Adjust Qty */}
+        {onUpdateLot && (
+          <div className="px-6 py-3 border-b border-slate-200 flex-shrink-0">
+            <p className="text-xs font-semibold mb-2" style={{ color: '#475569' }}>Adjust Quantity</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: '#64748B' }}>
+                Current: {currentLot.qty.toLocaleString()}{uomSymbol ? ` ${uomSymbol}` : ''}
+              </span>
+              <input
+                type="number"
+                placeholder="+/- amount"
+                value={adjustDelta}
+                step="any"
+                onChange={e => setAdjustDelta(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleApplyAdjust()}
+                className="w-28 px-2 py-1 rounded border text-xs outline-none"
+                style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
+              />
+              <button
+                onClick={handleApplyAdjust}
+                disabled={!adjustDelta || isNaN(parseFloat(adjustDelta)) || parseFloat(adjustDelta) === 0}
+                className="px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#6366F1', color: '#fff' }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Section label */}
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
@@ -1038,6 +1116,7 @@ export function LotTransactionHistoryModal({ lot, locations, onClose }) {
                   'draw-down':      { label: 'Draw Down',  bg: '#8B5CF6', fg: '#fff'    },
                   'production-use': { label: 'Production', bg: '#F59E0B', fg: '#1C1917' },
                   'move':           { label: 'Move',       bg: '#0EA5E9', fg: '#fff'    },
+                  'adjust':         { label: 'Adjust',     bg: '#F97316', fg: '#fff'    },
                 };
                 const txStyle = txTypeMap[txn.type] || { label: txn.type, bg: '#E2E8F0', fg: '#64748B' };
                 const isInflow = txn.qtyChange >= 0;
