@@ -10,7 +10,9 @@ function Confetti() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     const colors = ['#6366F1','#818CF8','#10B981','#F59E0B','#EF4444','#EC4899','#FCD34D','#34D399'];
-    const particles = Array.from({ length: 220 }, () => ({
+
+    // Rain particles (fall from top)
+    const rainParticles = Array.from({ length: 140 }, () => ({
       x: Math.random() * canvas.width,
       y: -30 - Math.random() * 400,
       w: Math.random() * 14 + 4,
@@ -21,13 +23,60 @@ function Confetti() {
       rot: Math.random() * 360,
       rotV: (Math.random() - 0.5) * 9,
     }));
-    let rafId;
+
+    // Gun barrel positions (estimated from celebration.png)
+    const guns = [
+      { x: 320,                  y: canvas.height - 480, spreadMin: -1.484, spreadMax: -0.960 },
+      { x: canvas.width - 320,   y: canvas.height - 480, spreadMin: -2.182, spreadMax: -1.658 },
+    ];
+
+    const createBurst = () => {
+      const particles = [];
+      guns.forEach(gun => {
+        for (let i = 0; i < 70; i++) {
+          const angle = gun.spreadMin + Math.random() * (gun.spreadMax - gun.spreadMin);
+          const speed = Math.random() * 22 + 12;
+          particles.push({
+            x: gun.x, y: gun.y,
+            w: Math.random() * 14 + 4,
+            h: Math.random() * 7 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            rot: Math.random() * 360,
+            rotV: (Math.random() - 0.5) * 20,
+            life: 0, maxLife: 100,
+          });
+        }
+      });
+      return particles;
+    };
+
+    let burstParticles = [];
     let frame = 0;
+    let rafId;
+
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const alpha = Math.max(0, 1 - frame / 180);
-      particles.forEach(p => {
+
+      if (frame % 90 === 0) burstParticles.push(...createBurst());
+
+      const rainAlpha = Math.max(0, 1 - frame / 180);
+      rainParticles.forEach(p => {
         p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+        ctx.save();
+        ctx.globalAlpha = rainAlpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      burstParticles = burstParticles.filter(p => p.life < p.maxLife);
+      burstParticles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.45; p.rot += p.rotV; p.life++;
+        const alpha = Math.max(0, 1 - p.life / p.maxLife);
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.translate(p.x, p.y);
@@ -36,8 +85,9 @@ function Confetti() {
         ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
         ctx.restore();
       });
+
       frame++;
-      if (frame < 220) rafId = requestAnimationFrame(animate);
+      if (frame < 450) rafId = requestAnimationFrame(animate);
     };
     animate();
     return () => cancelAnimationFrame(rafId);
@@ -676,6 +726,7 @@ export const SETUP_TUTORIAL_STEPS = [
 // ─── Main Tutorial component ─────────────────────────────────────────
 export default function Tutorial({ steps = TUTORIAL_STEPS, stepIndex, onNext, onBack, onSkip }) {
   const [targetRect, setTargetRect] = useState(null);
+  const [confettiKey, setConfettiKey] = useState(0);
   const rafRef = useRef(null);
 
   const step = steps[stepIndex];
@@ -745,13 +796,13 @@ export default function Tutorial({ steps = TUTORIAL_STEPS, stepIndex, onNext, on
   if (step.type === 'completion') {
     return (
       <>
-        <Confetti />
+        <Confetti key={confettiKey} />
         <img
           src="/celebration.png"
           alt=""
           style={{
             position: 'fixed', bottom: 0, left: 0,
-            height: 320, width: 'auto',
+            height: 800, width: 'auto',
             zIndex: 9999, pointerEvents: 'none',
           }}
         />
@@ -760,12 +811,12 @@ export default function Tutorial({ steps = TUTORIAL_STEPS, stepIndex, onNext, on
           alt=""
           style={{
             position: 'fixed', bottom: 0, right: 0,
-            height: 320, width: 'auto',
+            height: 800, width: 'auto',
             zIndex: 9999, pointerEvents: 'none',
             transform: 'scaleX(-1)',
           }}
         />
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9997, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+        <div className="fixed inset-0 flex flex-col items-center justify-center" style={{ zIndex: 9997, backgroundColor: 'rgba(0,0,0,0.6)' }}>
           <div
             className="bg-white rounded-2xl p-8 mx-4 shadow-2xl text-center"
             style={{ maxWidth: 440, width: '100%', border: '1px solid rgba(99,102,241,0.2)' }}
@@ -786,6 +837,24 @@ export default function Tutorial({ steps = TUTORIAL_STEPS, stepIndex, onNext, on
               Close Tutorial
             </button>
           </div>
+          <button
+            onClick={() => setConfettiKey(k => k + 1)}
+            title="Replay confetti"
+            style={{
+              marginTop: 16,
+              width: 40, height: 40,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              color: '#fff',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            ↻
+          </button>
         </div>
       </>
     );
