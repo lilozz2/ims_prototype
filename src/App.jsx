@@ -104,7 +104,7 @@ const INITIAL_DATA = {
           formFactor: '2.5kg bag',
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'Production batch',   type: 'number', required: true },
+            { name: 'Production batch',   type: 'text', required: true },
           ],
         },
         {
@@ -208,7 +208,7 @@ const INITIAL_DATA = {
           formFactor: '200L drum',
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'blending batch',     type: 'text', required: true },
           ],
         },
         {
@@ -217,7 +217,7 @@ const INITIAL_DATA = {
           formFactor: '1L bottle',
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'blending batch',     type: 'text', required: true },
           ],
         },
         {
@@ -226,7 +226,7 @@ const INITIAL_DATA = {
           formFactor: '5L Jerry can',
           fields: [
             { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'blending batch',     type: 'number', required: true },
+            { name: 'blending batch',     type: 'text', required: true },
           ],
         },
       ],
@@ -677,7 +677,7 @@ export default function App() {
     showToast('Recipe deleted', 'success');
   }, [showToast]);
 
-  const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots }) => {
+  const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots, executionType }) => {
     setData(prev => {
       let newData = { ...prev, categories: prev.categories.map(cat => ({ ...cat, items: cat.items.map(i => ({ ...i, lots: [...i.lots] })) })) };
 
@@ -695,7 +695,7 @@ export default function App() {
                 qty: lot.qty - usage.qtyToUse,
                 transactions: [...(lot.transactions || []), {
                   id: `TXN-${Date.now()}-${idx}`,
-                  type: 'production-use',
+                  type: executionType === 'draw-down' ? 'draw-down' : 'production-use',
                   timestamp: new Date().toISOString(),
                   qtyChange: -usage.qtyToUse,
                   reference: ref,

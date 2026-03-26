@@ -214,14 +214,17 @@ function ShimmerField() {
 
 // ── PurchaseLotsModal ───────────────────────────────────────────────
 
-function generateLotId(sku, attrValues) {
+function generateLotIdPrefix(sku, attrValues) {
   const clean = s => String(s).replace(/-/g, '');
   const parts = [clean(sku)];
   Object.values(attrValues).forEach(v => {
     if (v !== '' && v !== null && v !== undefined) parts.push(clean(v));
   });
-  parts.push(Math.random().toString(36).slice(2, 10));
   return parts.join('-');
+}
+
+function generateLotId(sku, attrValues) {
+  return generateLotIdPrefix(sku, attrValues) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
 function makeEntry() {
@@ -471,6 +474,18 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
           <Plus size={14} />
           Add Another
         </button>
+      </div>
+
+      <div className="mb-4 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+          Status
+        </p>
+        {item?.sku && (
+          <div className="flex items-center justify-between text-xs">
+            <span style={{ color: '#64748B' }}>Lot ID</span>
+            <span className="font-mono" style={{ color: '#1E1B4B' }}>{generateLotIdPrefix(item.sku, attrValues)}-*</span>
+          </div>
+        )}
       </div>
 
       <SubmitButton
@@ -1136,12 +1151,16 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
                           {new Date(txn.timestamp).toLocaleString()}
                         </span>
                       </div>
-                      {txn.type === 'production-use' && txn.reference && (
+                      {(txn.type === 'production-use' || (txn.type === 'draw-down' && txn.qtyChange < 0)) && txn.reference && (
                         <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
-                          Ref:{' '}
-                          <span style={{ fontFamily: 'monospace', color: '#1E1B4B' }}>
-                            {txn.reference}
-                          </span>
+                          Dest:{' '}
+                          <span style={{ fontFamily: 'monospace', color: '#1E1B4B' }}>{txn.reference}</span>
+                        </p>
+                      )}
+                      {(txn.type === 'produce' || (txn.type === 'draw-down' && txn.qtyChange >= 0)) && txn.sourceLotIds?.length > 0 && (
+                        <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
+                          Sources:{' '}
+                          <span style={{ fontFamily: 'monospace', color: '#1E1B4B' }}>{txn.sourceLotIds.join(', ')}</span>
                         </p>
                       )}
                       {txn.type === 'move' && txn.reference && (
@@ -1297,6 +1316,10 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
 
   const [attrValues, setAttrValues] = useState({});
   const [copyFromLotId, setCopyFromLotId] = useState('');
+  const [srcFilters, setSrcFilters] = useState({});
+  const getSrcFilter = srcId => srcFilters[srcId] || { field: '', text: '' };
+  const setSrcFilter = (srcId, patch) =>
+    setSrcFilters(prev => ({ ...prev, [srcId]: { ...getSrcFilter(srcId), ...patch } }));
   const handleAttrChange = (fieldName, value) =>
     setAttrValues(prev => ({ ...prev, [fieldName]: value }));
 
@@ -1311,13 +1334,22 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
           if (itm.id !== src.itemId) continue;
           for (const lot of itm.lots) {
             if (lot.locationId !== locationId || lot.formFactor !== src.formFactor) continue;
-            result[src.id].push({ lotId: lot.id, itemName: itm.name, formFactor: lot.formFactor, qty: lot.qty });
+            result[src.id].push({ lotId: lot.id, itemName: itm.name, formFactor: lot.formFactor, qty: lot.qty, attributes: lot.attributes || {} });
           }
         }
       }
     }
     return result;
   }, [locationId, recipe, data]);
+
+  // Source attribute schema lookup
+  const getSourceSchema = (itemId, formFactor) => {
+    for (const cat of data.categories) {
+      const schema = cat.attributeSchemas?.find(s => s.itemId === itemId && s.formFactor === formFactor);
+      if (schema) return schema;
+    }
+    return null;
+  };
 
   // Item name lookup for segment headers
   const getItemName = (itemId) => {
@@ -1459,6 +1491,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
               timestamp: new Date().toISOString(),
               qtyChange: parseFloat(r.qty),
               reference: null,
+              sourceLotIds: allUsages.map(u => u.lotId),
             }],
           };
         });
@@ -1469,6 +1502,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
           .filter(r => r.lotId && r.qtyToUse > 0)
           .map(r => ({ lotId: r.lotId, qtyToUse: r.qtyToUse })),
         newLots,
+        executionType,
       });
       setSubmitting(false);
     }, 200);
@@ -1503,12 +1537,42 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
           {(recipe?.sources || []).map((src, srcIdx) => {
             const lotsForSrc = selectableLotsPerSrc[src.id] || [];
             const rows = sourceRowsBySegment[src.id] || [];
+            const srcSchema = getSourceSchema(src.itemId, src.formFactor);
+            const filter = getSrcFilter(src.id);
+            const attributeFilteredLots = (filter.field && filter.text)
+              ? lotsForSrc.filter(l => usedLotIds.has(l.lotId) || String(l.attributes?.[filter.field] ?? '').toLowerCase().includes(filter.text.toLowerCase()))
+              : lotsForSrc;
             return (
               <div key={src.id} className={srcIdx > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
                 <p className="text-xs font-semibold mb-2" style={{ color: '#1E1B4B' }}>
                   {getItemName(src.itemId)}
                   <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
                 </p>
+                {srcSchema && srcSchema.fields.length > 0 && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <select
+                      className="text-xs rounded-lg px-2 py-1 border"
+                      style={{ borderColor: '#E2E8F0', color: '#64748B', backgroundColor: '#fff' }}
+                      value={filter.field}
+                      onChange={e => setSrcFilter(src.id, { field: e.target.value, text: '' })}
+                    >
+                      <option value="">Filter by…</option>
+                      {srcSchema.fields.map(f => (
+                        <option key={f.name} value={f.name}>{f.name}</option>
+                      ))}
+                    </select>
+                    {filter.field && (
+                      <input
+                        type="text"
+                        className="flex-1 text-xs rounded-lg px-2 py-1 border outline-none"
+                        style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
+                        placeholder={`Filter ${filter.field}…`}
+                        value={filter.text}
+                        onChange={e => setSrcFilter(src.id, { text: e.target.value })}
+                      />
+                    )}
+                  </div>
+                )}
                 <div className="space-y-3">
                   {rows.map(row => {
                     const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
@@ -1522,7 +1586,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                               onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
                             >
                               <option value="">Select lot…</option>
-                              {lotsForSrc
+                              {attributeFilteredLots
                                 .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
                                 .map(l => (
                                   <option key={l.lotId} value={l.lotId}>
@@ -1543,16 +1607,6 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                         </div>
                         {row.lotId && (
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs w-4 text-right" style={{ color: '#94A3B8' }}>0</span>
-                            <input
-                              type="range"
-                              min={0}
-                              max={maxQty}
-                              value={row.qtyToUse}
-                              onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseFloat(e.target.value) })}
-                              className="flex-1"
-                            />
-                            <span className="text-xs w-8 text-left" style={{ color: '#94A3B8' }}>{maxQty}</span>
                             <input
                               type="number"
                               min={0}
@@ -1658,7 +1712,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
         )}
 
         {/* Qty rows */}
-        <div data-tutorial="exec-add-dest-lot">
+        <div data-tutorial="exec-add-dest-lot" className="rounded-lg p-3" style={{ border: '1px solid #E2E8F0' }}>
           <div className="space-y-2">
             {destRows.map((row) => (
               <div key={row.id} className="flex items-center gap-2">
@@ -1764,6 +1818,12 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                 );
               })}
             </div>
+            {item?.sku && (
+              <div className="flex items-center justify-between text-xs mt-3 pt-3 border-t border-slate-100">
+                <span style={{ color: '#64748B' }}>Lot ID</span>
+                <span className="font-mono" style={{ color: '#1E1B4B' }}>{generateLotIdPrefix(item.sku, attrValues)}-*</span>
+              </div>
+            )}
           </div>
         );
       })()}

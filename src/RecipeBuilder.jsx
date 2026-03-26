@@ -100,15 +100,22 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
 
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Quantity</label>
-          <input
-            type="number"
-            className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-            style={{ borderColor: '#E2E8F0' }}
-            value={qty}
-            onChange={e => setQty(e.target.value)}
-            min="0"
-            step="any"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+              style={{ borderColor: '#E2E8F0' }}
+              value={qty}
+              onChange={e => setQty(e.target.value)}
+              min="0"
+              step="any"
+            />
+            {selectedItem && data.uom.find(u => u.id === selectedItem.uomId)?.symbol && (
+              <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                {data.uom.find(u => u.id === selectedItem.uomId).symbol}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 pt-1">
@@ -136,7 +143,7 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
 
 // ── Destination Node Popover (output only — item is pre-fixed) ─────
 
-function DestNodePopover({ node, item, onSave, onClose }) {
+function DestNodePopover({ node, item, data, onSave, onClose }) {
   const [formFactor, setFormFactor] = useState(node?.formFactor || '');
   const [qty, setQty] = useState(node?.qty || 1);
   const popoverRef = useRef(null);
@@ -201,15 +208,22 @@ function DestNodePopover({ node, item, onSave, onClose }) {
 
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Quantity</label>
-          <input
-            type="number"
-            className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-            style={{ borderColor: '#E2E8F0' }}
-            value={qty}
-            onChange={e => setQty(e.target.value)}
-            min="0"
-            step="any"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+              style={{ borderColor: '#E2E8F0' }}
+              value={qty}
+              onChange={e => setQty(e.target.value)}
+              min="0"
+              step="any"
+            />
+            {data.uom.find(u => u.id === item?.uomId)?.symbol && (
+              <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                {data.uom.find(u => u.id === item?.uomId).symbol}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 pt-1">
@@ -248,6 +262,14 @@ function SourceNodeCard({ node, data, onEdit, onDelete }) {
     return itemId;
   };
 
+  const getUomSymbol = (itemId) => {
+    for (const cat of data.categories) {
+      const item = cat.items.find(i => i.id === itemId);
+      if (item) return data.uom.find(u => u.id === item.uomId)?.symbol || '';
+    }
+    return '';
+  };
+
   return (
     <div className="relative">
       <div
@@ -281,7 +303,7 @@ function SourceNodeCard({ node, data, onEdit, onDelete }) {
           </div>
         </div>
         <div className="text-sm font-semibold" style={{ color: '#6366F1' }}>
-          ×{node.qty.toLocaleString()}
+          {node.qty.toLocaleString()}{getUomSymbol(node.itemId) ? ` ${getUomSymbol(node.itemId)}` : ''}
         </div>
       </div>
 
@@ -353,7 +375,7 @@ function DestinationCard({ output, item, data, onEdit }) {
             </button>
           </div>
           <div className="text-sm font-semibold" style={{ color: '#6366F1' }}>
-            ×{output.qty.toLocaleString()}
+            {output.qty.toLocaleString()}{data.uom.find(u => u.id === item?.uomId)?.symbol ? ` ${data.uom.find(u => u.id === item?.uomId).symbol}` : ''}
           </div>
         </div>
       ) : (
@@ -371,6 +393,7 @@ function DestinationCard({ output, item, data, onEdit }) {
         <DestNodePopover
           node={output}
           item={item}
+          data={data}
           onSave={(updated) => { onEdit(updated); setShowPopover(false); }}
           onClose={() => setShowPopover(false)}
         />
