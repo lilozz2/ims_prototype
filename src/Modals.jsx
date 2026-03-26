@@ -291,8 +291,8 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       const lots = validEntries.map(e => ({
         id: generateLotId(item?.sku || '', attrValues),
         formFactor,
-        qty: parseInt(e.qty, 10),
-        buyInPrice: e.qty ? (parseFloat(e.totalPrice) || 0) / parseInt(e.qty, 10) : 0,
+        qty: parseFloat(e.qty),
+        buyInPrice: e.qty ? (parseFloat(e.totalPrice) || 0) / parseFloat(e.qty) : 0,
         locationId,
         attributes: attrValues,
         highlightNew: true,
@@ -428,7 +428,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
                   onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
                   placeholder="0"
                   min="0"
-                  step="1"
+                  step="any"
                 />
               </FormField>
               <FormField label="Total Price">
@@ -1417,7 +1417,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
   const canSubmit =
     locationId &&
     Object.values(sourceRowsBySegment).flat().some(r => r.lotId && r.qtyToUse > 0) &&
-    destRows.some(r => parseInt(r.qty, 10) > 0);
+    destRows.some(r => parseFloat(r.qty) > 0);
 
   const handleExecute = () => {
     if (!canSubmit) return;
@@ -1442,14 +1442,14 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       }, 0);
 
       const newLots = destRows
-        .filter(r => parseInt(r.qty, 10) > 0)
+        .filter(r => parseFloat(r.qty) > 0)
         .map((r, i) => {
           const batchId = generateLotId(item?.sku || '', attrValues);
           return {
             id: batchId,
             formFactor: recipe.output.formFactor,
-            qty: parseInt(r.qty, 10),
-            buyInPrice: parseInt(r.qty, 10) > 0 ? totalSourceCost / parseInt(r.qty, 10) : 0,
+            qty: parseFloat(r.qty),
+            buyInPrice: parseFloat(r.qty) > 0 ? totalSourceCost / parseFloat(r.qty) : 0,
             locationId,
             attributes: { ...attrValues },
             highlightNew: true,
@@ -1457,7 +1457,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
               id: `TXN-${now}-dest-${i}`,
               type: executionType,
               timestamp: new Date().toISOString(),
-              qtyChange: parseInt(r.qty, 10),
+              qtyChange: parseFloat(r.qty),
               reference: null,
             }],
           };
@@ -1549,7 +1549,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                               min={0}
                               max={maxQty}
                               value={row.qtyToUse}
-                              onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseInt(e.target.value, 10) })}
+                              onChange={e => updateSrcRow(src.id, row.id, { qtyToUse: parseFloat(e.target.value) })}
                               className="flex-1"
                             />
                             <span className="text-xs w-8 text-left" style={{ color: '#94A3B8' }}>{maxQty}</span>
@@ -1559,7 +1559,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                               max={maxQty}
                               value={row.qtyToUse}
                               onChange={e => {
-                                const v = Math.min(maxQty, Math.max(0, parseInt(e.target.value, 10) || 0));
+                                const v = Math.min(maxQty, Math.max(0, parseFloat(e.target.value) || 0));
                                 updateSrcRow(src.id, row.id, { qtyToUse: v });
                               }}
                               className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
@@ -1667,6 +1667,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
                   <input
                     type="number"
                     min={0}
+                    step="any"
                     value={row.qty}
                     onChange={e => updateDestRow(row.id, e.target.value)}
                     placeholder="0"
@@ -1701,7 +1702,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
 
       {/* Status section */}
       {(() => {
-        const destTotal = destRows.reduce((sum, r) => sum + (parseInt(r.qty, 10) || 0), 0);
+        const destTotal = destRows.reduce((sum, r) => sum + (parseFloat(r.qty) || 0), 0);
         return (
           <div className="mb-5 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }} data-tutorial="exec-status-section">
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>

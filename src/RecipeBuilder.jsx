@@ -37,7 +37,7 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
       id: node?.id || 'n-' + Date.now().toString(36),
       itemId,
       formFactor,
-      qty: parseInt(qty, 10),
+      qty: parseFloat(qty),
     });
   };
 
@@ -106,8 +106,8 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
             style={{ borderColor: '#E2E8F0' }}
             value={qty}
             onChange={e => setQty(e.target.value)}
-            min="1"
-            step="1"
+            min="0"
+            step="any"
           />
         </div>
 
@@ -152,7 +152,7 @@ function DestNodePopover({ node, item, onSave, onClose }) {
     if (qty < 1) return;
     onSave({
       formFactor,
-      qty: parseInt(qty, 10),
+      qty: parseFloat(qty),
     });
   };
 
@@ -207,8 +207,8 @@ function DestNodePopover({ node, item, onSave, onClose }) {
             style={{ borderColor: '#E2E8F0' }}
             value={qty}
             onChange={e => setQty(e.target.value)}
-            min="1"
-            step="1"
+            min="0"
+            step="any"
           />
         </div>
 
