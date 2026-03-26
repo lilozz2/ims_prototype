@@ -209,7 +209,7 @@ export const TUTORIAL_STEPS = [
     id: 'milestone-purchase',
     type: 'milestone',
     phase: 0,
-    text: "Your ingredients are now in SG Warehouse. Next, you'll batch move the lots to Uskun Warehouse — where production happens.",
+    text: "Your ingredients are now in SG Warehouse. Next, you'll batch move the lots to Uchkun Warehouse — where production happens.",
   },
   // 8
   {
@@ -223,18 +223,18 @@ export const TUTORIAL_STEPS = [
   },
   // 9
   {
-    id: 'move-to-uskun',
+    id: 'move-to-Uchkun',
     type: 'corner',
-    title: 'Move to Uskun Warehouse',
-    description: 'Select Uskun Warehouse as the destination and confirm.',
-    instruction: 'Set the destination to Uskun Warehouse and click Move Lots',
+    title: 'Move to Uchkun Warehouse',
+    description: 'Select Uchkun Warehouse as the destination and confirm.',
+    instruction: 'Set the destination to Uchkun Warehouse and click Move Lots',
   },
   // 10
   {
     id: 'milestone-move',
     type: 'milestone',
     phase: 1,
-    text: "Lots are at Uskun Warehouse. Time to set up a production recipe and manufacture Marker Solution (200L drum).",
+    text: "Lots are at Uchkun Warehouse. Time to set up a production recipe and manufacture Marker Solution (200L drum).",
   },
   // 11
   {
@@ -287,7 +287,7 @@ export const TUTORIAL_STEPS = [
     position: 'left',
     title: 'Select the Source Location',
     description: 'Choose the warehouse where your source lots are stored. This filters the available lots in the Sources section.',
-    instruction: 'Select "Uskun Warehouse" from the dropdown, then click Next',
+    instruction: 'Select "Uchkun Warehouse" from the dropdown, then click Next',
     showNext: true,
   },
   // 16
@@ -391,8 +391,8 @@ export const TUTORIAL_STEPS = [
     target: '[data-tutorial="exec-location-sources"]',
     position: 'left',
     title: '📍 Select Location & Source Lot',
-    description: 'Choose "Uskun Warehouse" as the location — this filters available lots. Then select the Marker Solution (200L drum) lot you just produced as the source.',
-    instruction: 'Select "Uskun Warehouse" as location, then select the produced lot as the source, then click Next',
+    description: 'Choose "Uchkun Warehouse" as the location — this filters available lots. Then select the Marker Solution (200L drum) lot you just produced as the source.',
+    instruction: 'Select "Uchkun Warehouse" as location, then select the produced lot as the source, then click Next',
     showNext: true,
   },
   // 25
@@ -450,7 +450,7 @@ export const TUTORIAL_STEPS = [
     description: "You've completed the core IMS workflow. Every action is fully traceable through transaction history.",
     bullets: [
       '✅ Purchased powder lots at SG Warehouse',
-      '✅ Batch moved lots to Uskun Warehouse',
+      '✅ Batch moved lots to Uchkun Warehouse',
       '✅ Created a production recipe for Marker Solution',
       '✅ Produced Marker Solution (200L drum)',
       '✅ Created a draw-down recipe for 5L Jerrycan',

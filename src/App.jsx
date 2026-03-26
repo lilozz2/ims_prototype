@@ -43,7 +43,7 @@ const INITIAL_DATA = {
            */
           lots: [
             {
-              id: 'B-PWD-2401',
+              id: 'PWD001-20250110-1-a3f2b1c4',
               formFactor: '2.5kg bag',
               qty: 2.5,
               buyInPrice: 2,
@@ -69,12 +69,12 @@ const INITIAL_DATA = {
           id: 'solvent-001',
           name: 'solvent',
           sku: 'SLV-001',
-          uomId: 'l',
+          uomId: 'kg',
           formFactors: ['200L drum'],
           defaultFormFactor: '200L drum',
           lots: [
             {
-              id: 'B-SLV-2403',
+              id: 'SLV001-20250308-d7e8f9a2',
               formFactor: '200L drum',
               qty: 200,
               buyInPrice: 1.25,
@@ -130,12 +130,12 @@ const INITIAL_DATA = {
           id: 'marker-001',
           name: 'marker solution',
           sku: 'MKR-001',
-          uomId: 'l',
+          uomId: 'kg',
           formFactors: ['200L drum', '1L bottle', '5L Jerry can'],
           defaultFormFactor: '200L drum',
           lots: [
             {
-              id: 'B-MKR-B2401',
+              id: 'MKR001-20250128-1-b4c5d6e7',
               formFactor: '1L bottle',
               qty: 1,
               buyInPrice: 3.20,
@@ -153,7 +153,7 @@ const INITIAL_DATA = {
               ],
             },
             {
-              id: 'B-MKR-B2402',
+              id: 'MKR001-20250225-2-c8d9e0f1',
               formFactor: '1L bottle',
               qty: 1,
               buyInPrice: 3.10,
@@ -171,7 +171,7 @@ const INITIAL_DATA = {
               ],
             },
             {
-              id: 'B-MKR-J2402',
+              id: 'MKR001-20250212-2-f2a3b4c5',
               formFactor: '5L Jerry can',
               qty: 5,
               buyInPrice: 2.75,
@@ -241,7 +241,7 @@ const INITIAL_DATA = {
   ],
   locations: [
     { id: 'LOC-001', name: 'SG Warehouse', type: 'Warehouse', capacity: 10000 },
-    { id: 'LOC-002', name: 'Ushkun Warehouse', type: 'Warehouse', capacity: 2000 },
+    { id: 'LOC-002', name: 'Uchkun Warehouse', type: 'Warehouse', capacity: 2000 },
     { id: 'LOC-003', name: 'Satellite Warehouse', type: 'Warehouse', capacity: 5000 },
   ],
   uom: [

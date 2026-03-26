@@ -214,8 +214,18 @@ function ShimmerField() {
 
 // ── PurchaseLotsModal ───────────────────────────────────────────────
 
+function generateLotId(sku, attrValues) {
+  const clean = s => String(s).replace(/-/g, '');
+  const parts = [clean(sku)];
+  Object.values(attrValues).forEach(v => {
+    if (v !== '' && v !== null && v !== undefined) parts.push(clean(v));
+  });
+  parts.push(Math.random().toString(36).slice(2, 10));
+  return parts.join('-');
+}
+
 function makeEntry() {
-  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), batchId: 'B-' + Date.now().toString(36).toUpperCase(), qty: '', totalPrice: '' };
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), qty: '', totalPrice: '' };
 }
 
 export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, locations, onSubmit, onClose }) {
@@ -274,12 +284,12 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
   };
 
   const handleSubmit = () => {
-    const validEntries = entries.filter(e => e.batchId && e.qty);
+    const validEntries = entries.filter(e => e.qty);
     if (!formFactor || validEntries.length === 0) return;
     setSubmitting(true);
     setTimeout(() => {
       const lots = validEntries.map(e => ({
-        id: e.batchId,
+        id: generateLotId(item?.sku || '', attrValues),
         formFactor,
         qty: parseInt(e.qty, 10),
         buyInPrice: e.qty ? (parseFloat(e.totalPrice) || 0) / parseInt(e.qty, 10) : 0,
@@ -466,7 +476,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
       <SubmitButton
         loading={submitting}
         onClick={handleSubmit}
-        disabled={!formFactor || !locationId || !entries.some(e => e.batchId && e.qty)}
+        disabled={!formFactor || !locationId || !entries.some(e => e.qty)}
       >
         Purchase Lots
       </SubmitButton>
@@ -481,7 +491,6 @@ export function AddItemModal({ category, existingItem, uomList = [], onSubmit, o
   const [name, setName] = useState(existingItem?.name || '');
   const [sku, setSku] = useState(existingItem?.sku || '');
   const [uomId, setUomId] = useState(existingItem?.uomId || '');
-  const [defaultFormFactor, setDefaultFormFactor] = useState(existingItem?.defaultFormFactor || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = () => {
@@ -489,14 +498,13 @@ export function AddItemModal({ category, existingItem, uomList = [], onSubmit, o
     setSubmitting(true);
     setTimeout(() => {
       const item = isEdit
-        ? { ...existingItem, name: name.trim(), sku: sku.trim(), uomId, defaultFormFactor }
+        ? { ...existingItem, name: name.trim(), sku: sku.trim(), uomId }
         : {
             id: 'item-' + Date.now().toString(36),
             name: name.trim(),
             sku: sku.trim(),
             uomId,
             formFactors: [],
-            defaultFormFactor,
             lots: [],
             warehousePolicies: [],
             recipe: null,
@@ -529,15 +537,6 @@ export function AddItemModal({ category, existingItem, uomList = [], onSubmit, o
           <option value="">— Select UoM —</option>
           {uomList.map(u => (
             <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
-          ))}
-        </SelectInput>
-      </FormField>
-
-      <FormField label="Default Form Factor">
-        <SelectInput value={defaultFormFactor} onChange={e => setDefaultFormFactor(e.target.value)}>
-          <option value="">Select form factor...</option>
-          {category?.formFactors.map(ff => (
-            <option key={ff.name} value={ff.name}>{ff.name}</option>
           ))}
         </SelectInput>
       </FormField>
@@ -1445,7 +1444,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       const newLots = destRows
         .filter(r => parseInt(r.qty, 10) > 0)
         .map((r, i) => {
-          const batchId = 'LOT-' + now.toString(36) + '-' + r.id;
+          const batchId = generateLotId(item?.sku || '', attrValues);
           return {
             id: batchId,
             formFactor: recipe.output.formFactor,
