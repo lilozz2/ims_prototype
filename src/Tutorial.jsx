@@ -125,7 +125,7 @@ export const TUTORIAL_STEPS = [
     title: 'Welcome to the IMS',
     description: "This tutorial walks you through the core inventory workflow.",
     bullets: [
-      '🛒 Purchase ingredients into a warehouse',
+      '🛒 Purchase raw materials into a warehouse',
       '🚚 Batch move lots to another location',
       '📋 Set up a production recipe',
       '🏭 Produce finished goods',
@@ -139,9 +139,9 @@ export const TUTORIAL_STEPS = [
     type: 'spotlight',
     target: '[data-tutorial="sidebar-ingredients"]',
     position: 'right',
-    title: 'Navigate to Ingredients',
-    description: "First, let's go to the Ingredients category where powder is stored.",
-    instruction: 'Click "Ingredients" in the sidebar',
+    title: 'Navigate to Raw Materials',
+    description: "First, let's go to the Raw Materials category where powder is stored.",
+    instruction: 'Click "Raw Materials" in the sidebar',
   },
   // 2
   {
@@ -181,7 +181,7 @@ export const TUTORIAL_STEPS = [
     target: '[data-tutorial="purchase-modal-attributes"]',
     position: 'left',
     title: 'Fill in Attribute Fields',
-    description: "These attributes are shared across all lots you're about to create.",
+    description: "These attributes are unique for each lot you're about to create.",
     bullets: [
       "Manufacturing date: today's date",
       'Production batch: 1',
@@ -209,7 +209,7 @@ export const TUTORIAL_STEPS = [
     id: 'milestone-purchase',
     type: 'milestone',
     phase: 0,
-    text: "Your ingredients are now in SG Warehouse. Next, you'll batch move the lots to Uchkun Warehouse — where production happens.",
+    text: "Your raw materials are now in SG Warehouse. Next, you'll batch move the lots to Uchkun Warehouse — where production happens.",
   },
   // 8
   {
@@ -261,7 +261,7 @@ export const TUTORIAL_STEPS = [
     id: 'define-recipe',
     type: 'corner',
     title: 'Define the Recipe',
-    description: 'Add the source ingredients and set the output quantity.',
+    description: 'Add the source raw materials and set the output quantity.',
     bullets: [
       'Powder (2.5kg bag) — qty 5',
       'Solvent (200L drum) — qty 20',
@@ -297,7 +297,7 @@ export const TUTORIAL_STEPS = [
     target: '[data-tutorial="exec-sources-section"]',
     position: 'left',
     title: 'Fill in Sources',
-    description: 'Select a lot and enter the qty for each ingredient segment.',
+    description: 'Select a lot and enter the qty for each raw material segment.',
     bullets: [
       'Powder (2.5kg bag): select any lot → qty 5',
       'Solvent (200L drum): select any lot → qty 20',
@@ -342,7 +342,7 @@ export const TUTORIAL_STEPS = [
     id: 'fill-and-produce',
     type: 'corner',
     title: 'Fill in and Produce',
-    description: 'Select source lots for each ingredient, add destination lots, and confirm the production run.',
+    description: 'Select source lots for each raw material, add destination lots, and confirm the production run.',
     instruction: 'Fill in the form and click Produce',
   },
   // 20
@@ -655,8 +655,8 @@ export const SETUP_TUTORIAL_STEPS = [
     instruction: 'Fill in the form, then click Save' },
   // 7 — auto when selectedCategoryId === 'ingredients'
   { id: 'setup-nav-category', type: 'spotlight', target: '[data-tutorial="sidebar-ingredients"]', position: 'right',
-    title: '📦 Navigate to Ingredients', description: 'Go to Ingredients to create form factors and items.',
-    instruction: 'Click "Ingredients" in the sidebar' },
+    title: '📦 Navigate to Raw Materials', description: 'Go to Raw Materials to create form factors and items.',
+    instruction: 'Click "Raw Materials" in the sidebar' },
   // 8 — auto when managerActiveTab === 'formFactors'
   { id: 'setup-go-ff-tab', type: 'spotlight', target: '[data-tutorial="tab-formfactors"]', position: 'bottom',
     title: 'Go to Form Factors Tab', description: 'Form factors define the packaging format of an item (e.g. bag, drum, can).',

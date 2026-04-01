@@ -597,7 +597,8 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
         <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
           {(() => {
             const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
-            const ffRecipe = item.formFactorRecipes?.[ffName] || null;
+            const ffRecipes = item.formFactorRecipes?.[ffName];
+            const ffRecipe = Array.isArray(ffRecipes) ? ffRecipes.length > 0 : !!ffRecipes;
             return (
               <>
                 {ffType === 'To Purchase' && (

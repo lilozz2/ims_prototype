@@ -10,7 +10,7 @@ const INITIAL_DATA = {
   categories: [
     {
       id: 'ingredients',
-      name: 'Ingredients',
+      name: 'Raw Materials',
       formFactors: [
         { name: '2.5kg bag' },
         { name: '200L drum' },
@@ -901,13 +901,15 @@ export default function App() {
       );
     }
     if (type === 'editRecipe') {
+      const existing = payload.item.formFactorRecipes?.[payload.formFactor];
+      const initialRecipes = Array.isArray(existing) ? existing : (existing ? [existing] : []);
       return (
         <RecipeBuilder
           item={payload.item}
-          initialRecipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
+          initialRecipes={initialRecipes}
           outputFormFactor={payload.formFactor}
           data={data}
-          onSave={(recipe) => handleSaveRecipe(payload.item.id, payload.formFactor, recipe)}
+          onSave={(recipes) => handleSaveRecipe(payload.item.id, payload.formFactor, recipes)}
           onClose={closeModal}
         />
       );
@@ -915,10 +917,12 @@ export default function App() {
     if (type === 'produceLot') {
       const ffType = payload.item.formFactorTypes?.[payload.formFactor];
       const executionType = ffType === 'To Draw Down' ? 'draw-down' : 'produce';
+      const existing = payload.item.formFactorRecipes?.[payload.formFactor];
+      const recipes = Array.isArray(existing) ? existing : (existing ? [existing] : []);
       return (
         <ExecutionModal
           item={payload.item}
-          recipe={payload.item.formFactorRecipes?.[payload.formFactor] || null}
+          recipes={recipes}
           data={data}
           executionType={executionType}
           onExecute={(execPayload) => handleExecuteRecipe({ ...execPayload, categoryId: payload.categoryId, item: payload.item })}

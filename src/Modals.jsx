@@ -228,7 +228,7 @@ function generateLotId(sku, attrValues) {
 }
 
 function makeEntry() {
-  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), qty: '', totalPrice: '' };
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), qty: '', attrValues: {} };
 }
 
 export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, locations, onSubmit, onClose }) {
@@ -236,7 +236,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
   const [locationId, setLocationId] = useState('');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
-  const [attrValues, setAttrValues] = useState({});
+  const [totalPrice, setTotalPrice] = useState('');
   const [entries, setEntries] = useState(() => [makeEntry()]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -246,7 +246,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
   useEffect(() => {
     if (!formFactor) {
       setSchema(null);
-      setAttrValues({});
+      setEntries(prev => prev.map(e => ({ ...e, attrValues: {} })));
       return;
     }
 
@@ -256,22 +256,24 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
 
     if (prefersReducedMotion) {
       setSchema(matchedSchema || null);
-      setAttrValues({});
+      setEntries(prev => prev.map(e => ({ ...e, attrValues: {} })));
       return;
     }
 
     setLoadingSchema(true);
     const timer = setTimeout(() => {
       setSchema(matchedSchema || null);
-      setAttrValues({});
+      setEntries(prev => prev.map(e => ({ ...e, attrValues: {} })));
       setLoadingSchema(false);
     }, 600);
 
     return () => clearTimeout(timer);
   }, [formFactor, category, item, prefersReducedMotion]);
 
-  const handleAttrChange = (fieldName, value) => {
-    setAttrValues(prev => ({ ...prev, [fieldName]: value }));
+  const updateEntryAttr = (entryId, fieldName, value) => {
+    setEntries(prev => prev.map(e =>
+      e.id === entryId ? { ...e, attrValues: { ...e.attrValues, [fieldName]: value } } : e
+    ));
   };
 
   const updateEntry = (id, field, value) => {
@@ -291,13 +293,15 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
     if (!formFactor || validEntries.length === 0) return;
     setSubmitting(true);
     setTimeout(() => {
+      const totalQty = validEntries.reduce((sum, e) => sum + parseFloat(e.qty), 0);
+      const buyInPrice = totalQty > 0 ? (parseFloat(totalPrice) || 0) / totalQty : 0;
       const lots = validEntries.map(e => ({
-        id: generateLotId(item?.sku || '', attrValues),
+        id: generateLotId(item?.sku || '', e.attrValues),
         formFactor,
         qty: parseFloat(e.qty),
-        buyInPrice: e.qty ? (parseFloat(e.totalPrice) || 0) / parseFloat(e.qty) : 0,
+        buyInPrice,
         locationId,
-        attributes: attrValues,
+        attributes: e.attrValues,
         highlightNew: true,
       }));
       onSubmit(lots);
@@ -338,77 +342,34 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
         </FormField>
       </div>
 
-      {/* Dynamic attribute fields */}
-      {loadingSchema && (
-        <div className="mb-4">
-          <div
-            className="rounded-lg p-3 mb-3 text-xs font-medium"
-            style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
+      {(() => {
+        const totalQty = entries.reduce((sum, e) => sum + (parseFloat(e.qty) || 0), 0);
+        const pricePerUnit = totalQty > 0 && totalPrice
+          ? (parseFloat(totalPrice) / totalQty).toFixed(4)
+          : null;
+        return (
+          <FormField
+            label="Total Price"
+            hint={pricePerUnit ? `Price per unit: $${pricePerUnit}` : undefined}
           >
-            Loading attribute fields...
-          </div>
-          <ShimmerField />
-          <ShimmerField />
-        </div>
-      )}
-
-      {!loadingSchema && schema && schema.fields.length > 0 && (
-        <div className="mb-4" data-tutorial="purchase-modal-attributes">
-          <div
-            className="rounded-lg p-3 mb-3 text-xs font-medium"
-            style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
-          >
-            Attribute Fields for {formFactor}
-          </div>
-          {schema.fields.map(field => (
-            <FormField key={field.name} label={field.name} required={field.required}>
-              {field.type === 'boolean' ? (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 cursor-pointer"
-                    checked={!!attrValues[field.name]}
-                    onChange={e => handleAttrChange(field.name, e.target.checked)}
-                    style={{ accentColor: '#6366F1' }}
-                  />
-                  <span className="text-sm" style={{ color: '#1E1B4B' }}>{field.name}</span>
-                </label>
-              ) : field.type === 'date' ? (
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
-                  style={{ borderColor: '#E2E8F0' }}
-                  value={attrValues[field.name] || ''}
-                  onChange={e => handleAttrChange(field.name, e.target.value)}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
-                  onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
-                />
-              ) : field.type === 'number' ? (
-                <NumberInput
-                  value={attrValues[field.name] || ''}
-                  onChange={e => handleAttrChange(field.name, e.target.value)}
-                  placeholder={`Enter ${field.name.toLowerCase()}`}
-                />
-              ) : (
-                <TextInput
-                  value={attrValues[field.name] || ''}
-                  onChange={e => handleAttrChange(field.name, e.target.value)}
-                  placeholder={`Enter ${field.name.toLowerCase()}`}
-                />
-              )}
-            </FormField>
-          ))}
-        </div>
-      )}
-
-      {!loadingSchema && formFactor && !schema && (
-        <div
-          className="rounded-lg px-3 py-2 text-xs mb-4"
-          style={{ backgroundColor: '#FEF9C3', color: '#854D0E' }}
-        >
-          No attribute schema defined for this form factor.
-        </div>
-      )}
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
+              <input
+                type="number"
+                className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
+                style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
+                value={totalPrice}
+                onChange={e => setTotalPrice(e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+              />
+            </div>
+          </FormField>
+        );
+      })()}
 
       {/* Lot entries */}
       <div className="border-t border-slate-100 pt-4 mt-2" data-tutorial="purchase-modal-lots">
@@ -422,47 +383,92 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
           </span>
         </div>
 
-        {entries.map((entry) => (
+        {entries.map((entry, idx) => (
           <div key={entry.id} className="mb-4 p-3 rounded-lg border" style={{ borderColor: '#E2E8F0' }}>
-            <div className="grid grid-cols-3 gap-3">
-              <FormField label="Quantity" required>
-                <NumberInput
-                  value={entry.qty}
-                  onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="any"
-                />
-              </FormField>
-              <FormField label="Total Price">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
-                  <input
-                    type="number"
-                    className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
-                    style={{ borderColor: '#E2E8F0' }}
-                    value={entry.totalPrice}
-                    onChange={e => updateEntry(entry.id, 'totalPrice', e.target.value)}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
-                    onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
-                  />
-                </div>
-              </FormField>
-              <div className="flex items-center justify-end h-full">
-                {entries.length > 1 && (
-                  <button
-                    className="p-1.5 rounded text-slate-400 hover:bg-red-100 hover:text-red-500 transition-colors"
-                    onClick={() => removeEntry(entry.id)}
-                    title="Remove"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
+            {/* Card header */}
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#94A3B8' }}>
+                Lot {idx + 1}
+              </span>
+              {entries.length > 1 && (
+                <button
+                  className="p-1.5 rounded text-slate-400 hover:bg-red-100 hover:text-red-500 transition-colors"
+                  onClick={() => removeEntry(entry.id)}
+                  title="Remove"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
+
+            {/* Per-lot attribute fields */}
+            {loadingSchema && (
+              <div data-tutorial="purchase-modal-attributes">
+                <ShimmerField />
+                <ShimmerField />
+              </div>
+            )}
+            {!loadingSchema && schema && schema.fields.length > 0 && (
+              <div className="grid grid-cols-2 gap-3" data-tutorial="purchase-modal-attributes">
+                {schema.fields.map(field => (
+                  <FormField key={field.name} label={field.name} required={field.required}>
+                    {field.type === 'boolean' ? (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 cursor-pointer"
+                          checked={!!entry.attrValues[field.name]}
+                          onChange={e => updateEntryAttr(entry.id, field.name, e.target.checked)}
+                          style={{ accentColor: '#6366F1' }}
+                        />
+                        <span className="text-sm" style={{ color: '#1E1B4B' }}>{field.name}</span>
+                      </label>
+                    ) : field.type === 'date' ? (
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
+                        style={{ borderColor: '#E2E8F0' }}
+                        value={entry.attrValues[field.name] || ''}
+                        onChange={e => updateEntryAttr(entry.id, field.name, e.target.value)}
+                        onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                        onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+                      />
+                    ) : field.type === 'number' ? (
+                      <NumberInput
+                        value={entry.attrValues[field.name] || ''}
+                        onChange={e => updateEntryAttr(entry.id, field.name, e.target.value)}
+                        placeholder={`Enter ${field.name.toLowerCase()}`}
+                      />
+                    ) : (
+                      <TextInput
+                        value={entry.attrValues[field.name] || ''}
+                        onChange={e => updateEntryAttr(entry.id, field.name, e.target.value)}
+                        placeholder={`Enter ${field.name.toLowerCase()}`}
+                      />
+                    )}
+                  </FormField>
+                ))}
+              </div>
+            )}
+            {!loadingSchema && formFactor && !schema && (
+              <div
+                className="rounded-lg px-3 py-2 text-xs mb-3"
+                style={{ backgroundColor: '#FEF9C3', color: '#854D0E' }}
+              >
+                No attribute schema defined for this form factor.
+              </div>
+            )}
+
+            {/* Quantity */}
+            <FormField label="Quantity" required>
+              <NumberInput
+                value={entry.qty}
+                onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
+                placeholder="0"
+                min="0"
+                step="any"
+              />
+            </FormField>
           </div>
         ))}
 
@@ -474,18 +480,6 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
           <Plus size={14} />
           Add Another
         </button>
-      </div>
-
-      <div className="mb-4 rounded-xl p-4" style={{ border: '1px solid #E2E8F0' }}>
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
-          Status
-        </p>
-        {item?.sku && (
-          <div className="flex items-center justify-between text-xs">
-            <span style={{ color: '#64748B' }}>Lot ID</span>
-            <span className="font-mono" style={{ color: '#1E1B4B' }}>{generateLotIdPrefix(item.sku, attrValues)}-*</span>
-          </div>
-        )}
       </div>
 
       <SubmitButton
@@ -1290,17 +1284,40 @@ export function AttachFormFactorsModal({ category, item, onSubmit, onClose }) {
 
 const makeRowId = () => Math.random().toString(36).slice(2, 8);
 
-export function ExecutionModal({ item, recipe, data, executionType = 'produce', onExecute, onClose }) {
-  const initSegments = () =>
-    Object.fromEntries((recipe?.sources || []).map(src => [
+export function ExecutionModal({ item, recipes, data, executionType = 'produce', onExecute, onClose }) {
+  const [selectedRecipeId, setSelectedRecipeId] = useState(() => recipes?.[0]?.id || '');
+
+  const recipe = React.useMemo(
+    () => recipes?.find(r => r.id === selectedRecipeId) || recipes?.[0] || null,
+    [recipes, selectedRecipeId]
+  );
+
+  const makeSegments = (rec) =>
+    Object.fromEntries((rec?.sources || []).map(src => [
       src.id,
       [{ id: makeRowId(), lotId: '', qtyToUse: 0 }],
     ]));
 
   const [locationId, setLocationId] = useState('');
-  const [sourceRowsBySegment, setSourceRowsBySegment] = useState(initSegments);
+  const [sourceRowsBySegment, setSourceRowsBySegment] = useState(() => makeSegments(recipe));
   const [destRows, setDestRows] = useState([{ id: makeRowId(), qty: '' }]);
   const [submitting, setSubmitting] = useState(false);
+  const [attrValues, setAttrValues] = useState({});
+  const [copyFromLotId, setCopyFromLotId] = useState('');
+  const [srcInputTypes, setSrcInputTypes] = useState({});   // { [srcId]: 'manual' | 'target' }
+  const [srcTargetQty, setSrcTargetQty] = useState({});     // { [srcId]: string }
+  const [srcTargetSort, setSrcTargetSort] = useState({});   // { [srcId]: { field: string, direction: 'asc'|'desc' } }
+
+  // Reset form when selected recipe changes
+  useEffect(() => {
+    setSourceRowsBySegment(makeSegments(recipe));
+    setDestRows([{ id: makeRowId(), qty: '' }]);
+    setAttrValues({});
+    setCopyFromLotId('');
+    setSrcInputTypes({});
+    setSrcTargetQty({});
+    setSrcTargetSort({});
+  }, [selectedRecipeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Attribute schema for output form factor
   const outputSchema = React.useMemo(() => {
@@ -1313,9 +1330,6 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
     }
     return null;
   }, [data, item, recipe]);
-
-  const [attrValues, setAttrValues] = useState({});
-  const [copyFromLotId, setCopyFromLotId] = useState('');
   const [srcFilters, setSrcFilters] = useState({});
   const getSrcFilter = srcId => srcFilters[srcId] || { field: '', text: '' };
   const setSrcFilter = (srcId, patch) =>
@@ -1341,6 +1355,52 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
     }
     return result;
   }, [locationId, recipe, data]);
+
+  // Target mode: auto-allocate lots in sorted order until targetQty is met
+  const resolvedTargetUsages = React.useMemo(() => {
+    const result = {};
+    for (const src of (recipe?.sources || [])) {
+      if ((srcInputTypes[src.id] || 'manual') !== 'target') continue;
+      const targetQty = parseFloat(srcTargetQty[src.id]) || 0;
+      if (targetQty <= 0) { result[src.id] = { usages: [], shortfall: 0 }; continue; }
+
+      const lotsForSrc = selectableLotsPerSrc[src.id] || [];
+      const sort = srcTargetSort[src.id] || { field: '', direction: 'asc' };
+      let sorted = [...lotsForSrc];
+      if (sort.field) {
+        sorted.sort((a, b) => {
+          const av = a.attributes?.[sort.field] ?? '';
+          const bv = b.attributes?.[sort.field] ?? '';
+          const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
+          return sort.direction === 'desc' ? -cmp : cmp;
+        });
+      }
+
+      let remaining = targetQty;
+      const usages = [];
+      for (const lot of sorted) {
+        if (remaining <= 0) break;
+        const take = Math.min(remaining, lot.qty);
+        if (take > 0) { usages.push({ lotId: lot.lotId, qtyToUse: take }); remaining -= take; }
+      }
+      result[src.id] = { usages, shortfall: remaining > 0 ? remaining : 0 };
+    }
+    return result;
+  }, [srcInputTypes, srcTargetQty, srcTargetSort, selectableLotsPerSrc, recipe]); // eslint-disable-line
+
+  // Unified effective usages per source (manual rows OR target-resolved)
+  const effectiveUsagesBySrc = React.useMemo(() => {
+    const result = {};
+    for (const src of (recipe?.sources || [])) {
+      const inputType = srcInputTypes[src.id] || 'manual';
+      if (inputType === 'target') {
+        result[src.id] = (resolvedTargetUsages[src.id]?.usages || []);
+      } else {
+        result[src.id] = (sourceRowsBySegment[src.id] || []).filter(r => r.lotId && r.qtyToUse > 0);
+      }
+    }
+    return result;
+  }, [recipe, srcInputTypes, resolvedTargetUsages, sourceRowsBySegment]);
 
   // Source attribute schema lookup
   const getSourceSchema = (itemId, formFactor) => {
@@ -1385,13 +1445,13 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
   const selectedSourceLots = React.useMemo(() => {
     const seen = new Set();
     const lots = [];
-    for (const rows of Object.values(sourceRowsBySegment)) {
-      for (const row of rows) {
-        if (row.lotId && !seen.has(row.lotId)) {
-          seen.add(row.lotId);
+    for (const usages of Object.values(effectiveUsagesBySrc)) {
+      for (const usage of usages) {
+        if (usage.lotId && !seen.has(usage.lotId)) {
+          seen.add(usage.lotId);
           for (const cat of data.categories) {
             for (const itm of cat.items) {
-              const lot = itm.lots?.find(l => l.id === row.lotId);
+              const lot = itm.lots?.find(l => l.id === usage.lotId);
               if (lot) lots.push({ lotId: lot.id, attributes: lot.attributes || {} });
             }
           }
@@ -1399,7 +1459,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
       }
     }
     return lots;
-  }, [sourceRowsBySegment, data]);
+  }, [effectiveUsagesBySrc, data]);
 
   const handleCopyAttributes = (sourceLotId) => {
     setCopyFromLotId(sourceLotId);
@@ -1448,7 +1508,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
 
   const canSubmit =
     locationId &&
-    Object.values(sourceRowsBySegment).flat().some(r => r.lotId && r.qtyToUse > 0) &&
+    Object.values(effectiveUsagesBySrc).flat().some(r => r.qtyToUse > 0) &&
     destRows.some(r => parseFloat(r.qty) > 0);
 
   const handleExecute = () => {
@@ -1467,7 +1527,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
         }
         return null;
       };
-      const allUsages = Object.values(sourceRowsBySegment).flat().filter(r => r.lotId && r.qtyToUse > 0);
+      const allUsages = Object.values(effectiveUsagesBySrc).flat().filter(r => r.qtyToUse > 0);
       const totalSourceCost = allUsages.reduce((sum, r) => {
         const lot = findLot(r.lotId);
         return sum + r.qtyToUse * (lot?.buyInPrice || 0);
@@ -1498,8 +1558,8 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
 
       onExecute({
         locationId,
-        sourceLotUsages: Object.values(sourceRowsBySegment).flat()
-          .filter(r => r.lotId && r.qtyToUse > 0)
+        sourceLotUsages: Object.values(effectiveUsagesBySrc).flat()
+          .filter(r => r.qtyToUse > 0)
           .map(r => ({ lotId: r.lotId, qtyToUse: r.qtyToUse })),
         newLots,
         executionType,
@@ -1511,6 +1571,20 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
   return (
     <ModalShell title={`${executionType === 'draw-down' ? 'Draw Down' : 'Produce'} — ${item?.name}`} onClose={onClose}>
       <div data-tutorial="exec-location-sources">
+        {/* Recipe selector */}
+        {recipes && recipes.length > 0 && (
+          <FormField label="Recipe" required>
+            <SelectInput
+              value={selectedRecipeId}
+              onChange={e => setSelectedRecipeId(e.target.value)}
+            >
+              {recipes.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </SelectInput>
+          </FormField>
+        )}
+
         {/* Location selector */}
         <div data-tutorial="exec-location">
           <FormField label="Location" required>
@@ -1518,7 +1592,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
               value={locationId}
               onChange={e => {
                 setLocationId(e.target.value);
-                setSourceRowsBySegment(initSegments());
+                setSourceRowsBySegment(makeSegments(recipe));
               }}
             >
               <option value="">Select location…</option>
@@ -1542,107 +1616,224 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
             const attributeFilteredLots = (filter.field && filter.text)
               ? lotsForSrc.filter(l => usedLotIds.has(l.lotId) || String(l.attributes?.[filter.field] ?? '').toLowerCase().includes(filter.text.toLowerCase()))
               : lotsForSrc;
+
+            const inputType = srcInputTypes[src.id] || 'manual';
+            const targetQtyVal = srcTargetQty[src.id] || '';
+            const targetSort = srcTargetSort[src.id] || { field: '', direction: 'asc' };
+            const resolved = resolvedTargetUsages[src.id];
+            const srcUom = getSourceUom(src.itemId);
+
             return (
               <div key={src.id} className={srcIdx > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
-                <p className="text-xs font-semibold mb-2" style={{ color: '#1E1B4B' }}>
-                  {getItemName(src.itemId)}
-                  <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
-                </p>
-                {srcSchema && srcSchema.fields.length > 0 && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <select
-                      className="text-xs rounded-lg px-2 py-1 border"
-                      style={{ borderColor: '#E2E8F0', color: '#64748B', backgroundColor: '#fff' }}
-                      value={filter.field}
-                      onChange={e => setSrcFilter(src.id, { field: e.target.value, text: '' })}
-                    >
-                      <option value="">Filter by…</option>
-                      {srcSchema.fields.map(f => (
-                        <option key={f.name} value={f.name}>{f.name}</option>
+                {/* Segment header + input type toggle */}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>
+                    {getItemName(src.itemId)}
+                    <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
+                  </p>
+                  {executionType === 'draw-down' && (
+                    <div className="flex gap-1">
+                      {['manual', 'target'].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setSrcInputTypes(prev => ({ ...prev, [src.id]: t }))}
+                          className="px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors"
+                          style={inputType === t
+                            ? { backgroundColor: '#6366F1', color: '#fff' }
+                            : { backgroundColor: '#F1F5F9', color: '#64748B' }}
+                        >
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </button>
                       ))}
-                    </select>
-                    {filter.field && (
-                      <input
-                        type="text"
-                        className="flex-1 text-xs rounded-lg px-2 py-1 border outline-none"
-                        style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
-                        placeholder={`Filter ${filter.field}…`}
-                        value={filter.text}
-                        onChange={e => setSrcFilter(src.id, { text: e.target.value })}
-                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Manual mode */}
+                {inputType === 'manual' && (
+                  <>
+                    {srcSchema && srcSchema.fields.length > 0 && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <select
+                          className="text-xs rounded-lg px-2 py-1 border"
+                          style={{ borderColor: '#E2E8F0', color: '#64748B', backgroundColor: '#fff' }}
+                          value={filter.field}
+                          onChange={e => setSrcFilter(src.id, { field: e.target.value, text: '' })}
+                        >
+                          <option value="">Filter by…</option>
+                          {srcSchema.fields.map(f => (
+                            <option key={f.name} value={f.name}>{f.name}</option>
+                          ))}
+                        </select>
+                        {filter.field && (
+                          <input
+                            type="text"
+                            className="flex-1 text-xs rounded-lg px-2 py-1 border outline-none"
+                            style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
+                            placeholder={`Filter ${filter.field}…`}
+                            value={filter.text}
+                            onChange={e => setSrcFilter(src.id, { text: e.target.value })}
+                          />
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-                <div className="space-y-3">
-                  {rows.map(row => {
-                    const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
-                    const maxQty = lotInfo?.qty ?? 0;
-                    return (
-                      <div key={row.id} className="rounded-lg p-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="flex-1">
-                            <SelectInput
-                              value={row.lotId}
-                              onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
-                            >
-                              <option value="">Select lot…</option>
-                              {attributeFilteredLots
-                                .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
-                                .map(l => (
-                                  <option key={l.lotId} value={l.lotId}>
-                                    {l.lotId} — {l.qty} avail
-                                  </option>
-                                ))}
-                            </SelectInput>
+                    <div className="space-y-3">
+                      {rows.map(row => {
+                        const lotInfo = lotsForSrc.find(l => l.lotId === row.lotId);
+                        const maxQty = lotInfo?.qty ?? 0;
+                        return (
+                          <div key={row.id} className="rounded-lg p-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="flex-1">
+                                <SelectInput
+                                  value={row.lotId}
+                                  onChange={e => updateSrcRow(src.id, row.id, { lotId: e.target.value, qtyToUse: 0 })}
+                                >
+                                  <option value="">Select lot…</option>
+                                  {attributeFilteredLots
+                                    .filter(l => !usedLotIds.has(l.lotId) || l.lotId === row.lotId)
+                                    .map(l => (
+                                      <option key={l.lotId} value={l.lotId}>
+                                        {l.lotId} — {l.qty} avail
+                                      </option>
+                                    ))}
+                                </SelectInput>
+                              </div>
+                              {rows.length > 1 && (
+                                <button
+                                  onClick={() => removeSrcRow(src.id, row.id)}
+                                  className="p-1 rounded hover:bg-red-50"
+                                  style={{ color: '#EF4444' }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                            {row.lotId && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={maxQty}
+                                  value={row.qtyToUse}
+                                  onChange={e => {
+                                    const v = Math.min(maxQty, Math.max(0, parseFloat(e.target.value) || 0));
+                                    updateSrcRow(src.id, row.id, { qtyToUse: v });
+                                  }}
+                                  className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
+                                  style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
+                                />
+                                <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                                  {srcUom}
+                                </span>
+                                <button
+                                  onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
+                                  className="text-xs px-2 py-1 rounded-lg font-semibold"
+                                  style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
+                                >
+                                  MAX
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          {rows.length > 1 && (
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => addSrcRow(src.id)}
+                      disabled={!locationId}
+                      className="mt-2 flex items-center gap-1 text-xs font-medium disabled:opacity-40"
+                      style={{ color: '#6366F1' }}
+                    >
+                      <Plus size={12} /> Add Lot
+                    </button>
+                  </>
+                )}
+
+                {/* Target mode */}
+                {inputType === 'target' && (
+                  <div className="space-y-3">
+                    {/* Target qty + sort row */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <span className="text-xs flex-shrink-0" style={{ color: '#64748B' }}>Target</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={targetQtyVal}
+                          onChange={e => setSrcTargetQty(prev => ({ ...prev, [src.id]: e.target.value }))}
+                          placeholder="0"
+                          className="w-20 text-xs text-right rounded-lg px-2 py-1 font-mono outline-none"
+                          style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff', color: '#1E1B4B' }}
+                          onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                          onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+                        />
+                        {srcUom && <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{srcUom}</span>}
+                      </div>
+                      {srcSchema && srcSchema.fields.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs flex-shrink-0" style={{ color: '#64748B' }}>Sort</span>
+                          <select
+                            className="text-xs rounded-lg px-2 py-1 border outline-none"
+                            style={{ borderColor: '#E2E8F0', color: '#64748B', backgroundColor: '#fff' }}
+                            value={targetSort.field}
+                            onChange={e => setSrcTargetSort(prev => ({ ...prev, [src.id]: { ...targetSort, field: e.target.value } }))}
+                          >
+                            <option value="">Default</option>
+                            {srcSchema.fields.map(f => (
+                              <option key={f.name} value={f.name}>{f.name}</option>
+                            ))}
+                          </select>
+                          {targetSort.field && (
                             <button
-                              onClick={() => removeSrcRow(src.id, row.id)}
-                              className="p-1 rounded hover:bg-red-50"
-                              style={{ color: '#EF4444' }}
+                              onClick={() => setSrcTargetSort(prev => ({ ...prev, [src.id]: { ...targetSort, direction: targetSort.direction === 'asc' ? 'desc' : 'asc' } }))}
+                              className="text-xs px-2 py-1 rounded-lg font-semibold transition-colors"
+                              style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
                             >
-                              <Trash2 size={14} />
+                              {targetSort.direction === 'asc' ? '↑ Asc' : '↓ Desc'}
                             </button>
                           )}
                         </div>
-                        {row.lotId && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <input
-                              type="number"
-                              min={0}
-                              max={maxQty}
-                              value={row.qtyToUse}
-                              onChange={e => {
-                                const v = Math.min(maxQty, Math.max(0, parseFloat(e.target.value) || 0));
-                                updateSrcRow(src.id, row.id, { qtyToUse: v });
-                              }}
-                              className="w-16 text-xs text-right rounded-lg px-2 py-1 font-mono"
-                              style={{ border: '1px solid #E2E8F0', backgroundColor: '#fff' }}
-                            />
-                            <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
-                              {getSourceUom(src.itemId)}
+                      )}
+                    </div>
+
+                    {/* Resolved lots preview */}
+                    {!locationId ? (
+                      <p className="text-xs" style={{ color: '#94A3B8' }}>Select a location to resolve lots.</p>
+                    ) : !targetQtyVal || parseFloat(targetQtyVal) <= 0 ? (
+                      <p className="text-xs" style={{ color: '#94A3B8' }}>Enter a target quantity above.</p>
+                    ) : resolved ? (
+                      <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #E2E8F0' }}>
+                        {resolved.usages.length === 0 ? (
+                          <p className="text-xs px-3 py-2" style={{ color: '#94A3B8' }}>No lots available at this location.</p>
+                        ) : (
+                          <div className="divide-y divide-slate-100">
+                            {resolved.usages.map(u => {
+                              const lotInfo = lotsForSrc.find(l => l.lotId === u.lotId);
+                              return (
+                                <div key={u.lotId} className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: '#F8FAFC' }}>
+                                  <span className="text-xs font-mono" style={{ color: '#1E1B4B' }}>{u.lotId}</span>
+                                  <span className="text-xs font-semibold" style={{ color: '#6366F1' }}>
+                                    {u.qtyToUse}{srcUom ? ` ${srcUom}` : ''}
+                                    <span className="font-normal ml-1" style={{ color: '#94A3B8' }}>of {lotInfo?.qty ?? '?'} avail</span>
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {resolved.shortfall > 0 && (
+                          <div className="flex items-center gap-1.5 px-3 py-2" style={{ backgroundColor: '#FEF2F2' }}>
+                            <span className="text-xs font-semibold" style={{ color: '#DC2626' }}>
+                              ⚠ {resolved.shortfall}{srcUom ? ` ${srcUom}` : ''} short — not enough stock
                             </span>
-                            <button
-                              onClick={() => updateSrcRow(src.id, row.id, { qtyToUse: maxQty })}
-                              className="text-xs px-2 py-1 rounded-lg font-semibold"
-                              style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}
-                            >
-                              MAX
-                            </button>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={() => addSrcRow(src.id)}
-                  disabled={!locationId}
-                  className="mt-2 flex items-center gap-1 text-xs font-medium disabled:opacity-40"
-                  style={{ color: '#6366F1' }}
-                >
-                  <Plus size={12} /> Add Lot
-                </button>
+                    ) : null}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1777,7 +1968,7 @@ export function ExecutionModal({ item, recipe, data, executionType = 'produce', 
             {/* Per-source rows */}
             <div className="space-y-3">
               {(recipe?.sources || []).map(src => {
-                const actualQty = (sourceRowsBySegment[src.id] || []).reduce((sum, r) => sum + (r.qtyToUse || 0), 0);
+                const actualQty = (effectiveUsagesBySrc[src.id] || []).reduce((sum, r) => sum + (r.qtyToUse || 0), 0);
                 const expectedQty = recipe.output.qty > 0 ? (src.qty / recipe.output.qty) * destTotal : 0;
                 const variation = actualQty - expectedQty;
                 const variationPct = (destTotal > 0 && expectedQty > 0) ? (variation / expectedQty) * 100 : null;

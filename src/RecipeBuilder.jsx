@@ -404,40 +404,44 @@ function DestinationCard({ output, item, data, onEdit }) {
 
 // ── RecipeBuilder (main) ──────────────────────────────────────────
 
-export default function RecipeBuilder({ item, initialRecipe, outputFormFactor, data, onSave, onClose }) {
-  const recipeName = item.name + ' recipe';
-  const [sources, setSources] = useState(initialRecipe?.sources || []);
-  const [output, setOutput] = useState(
-    initialRecipe?.output || (outputFormFactor ? { formFactor: outputFormFactor, qty: 1 } : null)
+export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, data, onSave, onClose }) {
+  const makeBlankRecipe = () => ({
+    id: 'r-' + Date.now().toString(36),
+    name: item.name + ' recipe',
+    sources: [],
+    output: outputFormFactor ? { formFactor: outputFormFactor, qty: 1 } : null,
+  });
+
+  const [recipes, setRecipes] = useState(() =>
+    initialRecipes && initialRecipes.length > 0 ? initialRecipes : [makeBlankRecipe()]
   );
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const activeRecipe = recipes[activeIdx];
+  const sources = activeRecipe.sources;
+  const output = activeRecipe.output;
+
+  const updateActive = (patch) =>
+    setRecipes(prev => prev.map((r, i) => i === activeIdx ? { ...r, ...patch } : r));
 
   const canSave = sources.length >= 1 && output !== null;
 
-  const handleAddSource = (node) => {
-    setSources(prev => [...prev, node]);
-  };
+  const handleAddSource = (node) => updateActive({ sources: [...sources, node] });
+  const handleEditSource = (updated) => updateActive({ sources: sources.map(n => n.id === updated.id ? updated : n) });
+  const handleDeleteSource = (id) => updateActive({ sources: sources.filter(n => n.id !== id) });
+  const handleSetOutput = (newOutput) => updateActive({ output: newOutput });
+  const handleNameChange = (name) => updateActive({ name });
 
-  const handleEditSource = (updated) => {
-    setSources(prev => prev.map(n => n.id === updated.id ? updated : n));
-  };
-
-  const handleDeleteSource = (id) => {
-    setSources(prev => prev.filter(n => n.id !== id));
-  };
-
-  const handleSetOutput = (newOutput) => {
-    setOutput(newOutput);
+  const handleAddRecipe = () => {
+    const newR = makeBlankRecipe();
+    newR.name = 'New Recipe';
+    setRecipes(prev => [...prev, newR]);
+    setActiveIdx(recipes.length);
   };
 
   const handleSave = () => {
     if (!canSave) return;
-    const recipeToSave = {
-      id: initialRecipe?.id || 'r-' + Date.now().toString(36),
-      name: recipeName,
-      sources,
-      output,
-    };
-    onSave(recipeToSave);
+    onSave(recipes);
   };
 
   const sourcesCount = sources.length;
@@ -453,21 +457,51 @@ export default function RecipeBuilder({ item, initialRecipe, outputFormFactor, d
         className="bg-white border-b border-slate-200 px-6 flex items-center justify-between h-14 flex-shrink-0 z-20"
         style={{ boxShadow: '0 1px 3px rgba(99,102,241,0.08)' }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <button
-            className="inline-flex items-center gap-1.5 text-sm cursor-pointer hover:opacity-70 transition-opacity"
+            className="inline-flex items-center gap-1.5 text-sm cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
             style={{ color: '#64748B' }}
             onClick={onClose}
           >
             ← Back
           </button>
-          <span className="text-slate-300">|</span>
-          <span className="text-base font-semibold" style={{ color: '#1E1B4B' }}>
-            {recipeName}
-          </span>
+          <span className="text-slate-300 flex-shrink-0">|</span>
+          {/* Recipe selector */}
+          <select
+            className="px-2 py-1 rounded-lg border text-sm outline-none transition-all duration-150 cursor-pointer"
+            style={{ borderColor: '#E2E8F0', color: '#1E1B4B', maxWidth: '160px' }}
+            value={activeIdx}
+            onChange={e => setActiveIdx(Number(e.target.value))}
+            onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+            onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+          >
+            {recipes.map((r, i) => (
+              <option key={r.id} value={i}>{r.name}</option>
+            ))}
+          </select>
+          {/* Editable name */}
+          <input
+            type="text"
+            className="px-2 py-1 rounded-lg border text-sm outline-none transition-all duration-150"
+            style={{ borderColor: '#E2E8F0', color: '#1E1B4B', maxWidth: '180px' }}
+            value={activeRecipe.name}
+            onChange={e => handleNameChange(e.target.value)}
+            onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+            onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+            placeholder="Recipe name"
+          />
+          {/* Add new recipe */}
+          <button
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border text-sm cursor-pointer hover:bg-indigo-50 transition-colors flex-shrink-0"
+            style={{ borderColor: '#C7D2FE', color: '#6366F1' }}
+            onClick={handleAddRecipe}
+          >
+            <Plus size={13} />
+            New Recipe
+          </button>
         </div>
         <button
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4"
           style={{ backgroundColor: '#6366F1', color: '#fff' }}
           onClick={handleSave}
           disabled={!canSave}
