@@ -668,7 +668,7 @@ export default function App() {
     showToast('Recipe deleted', 'success');
   }, [showToast]);
 
-  const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots, executionType }) => {
+  const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots, executionType, executionStatus }) => {
     setData(prev => {
       const r2 = (n) => parseFloat(n.toFixed(2));
 
@@ -722,6 +722,7 @@ export default function App() {
                   timestamp: new Date().toISOString(),
                   qtyChange: -usage.qtyToUse,
                   reference: ref,
+                  executionStatus,
                 }],
               };
             }),

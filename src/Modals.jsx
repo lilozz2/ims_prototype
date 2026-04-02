@@ -858,12 +858,68 @@ export function AddLocationModal({ locations, existingLocation, onSubmit, onClos
 
 // ── LotTransactionHistoryModal ────────────────────────────────────
 
+function ExecutionStatusTooltip({ status }) {
+  const fmtNum = (n) => Number.isInteger(n) ? n : parseFloat(n.toFixed(1));
+  return (
+    <div className="mt-2 rounded-lg p-3 text-xs" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+      <p className="font-semibold uppercase tracking-wider mb-2" style={{ color: '#94A3B8', fontSize: '10px' }}>
+        Status
+      </p>
+      <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-100">
+        <span>
+          <span className="font-semibold" style={{ color: '#1E1B4B' }}>{status.destItemName}</span>
+          <span className="ml-1" style={{ color: '#64748B' }}>• {status.destFormFactor}</span>
+        </span>
+        <span className="font-mono font-bold" style={{ color: '#1E1B4B' }}>{status.destTotal}</span>
+      </div>
+      <div className="space-y-2">
+        {status.sources.map((src, i) => {
+          const absPct = src.variationPct !== null ? Math.abs(src.variationPct) : null;
+          const badgeStyle = absPct === null ? null
+            : absPct === 0   ? { color: '#10B981', backgroundColor: '#ECFDF5' }
+            : absPct <= 10   ? { color: '#B45309', backgroundColor: '#FFFBEB' }
+            :                  { color: '#DC2626', backgroundColor: '#FEF2F2' };
+          return (
+            <div key={i}>
+              <p className="font-semibold mb-0.5" style={{ color: '#1E1B4B' }}>
+                {src.itemName}
+                <span className="font-normal ml-1" style={{ color: '#64748B' }}>• {src.formFactor}</span>
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span style={{ color: '#64748B' }}>
+                  Expected{' '}
+                  <span className="font-mono font-semibold" style={{ color: '#1E1B4B' }}>
+                    {status.destTotal > 0 ? fmtNum(src.expectedQty) : '—'}
+                  </span>
+                </span>
+                <span style={{ color: '#64748B' }}>
+                  Actual{' '}
+                  <span className="font-mono font-semibold" style={{ color: '#1E1B4B' }}>
+                    {src.actualQty > 0 ? src.actualQty : '—'}
+                  </span>
+                </span>
+                {badgeStyle && (
+                  <span className="px-1.5 py-0.5 rounded font-semibold" style={badgeStyle}>
+                    {src.variation >= 0 ? '+' : ''}{fmtNum(src.variation)}
+                    {src.variationPct !== null && ` (${src.variationPct >= 0 ? '+' : ''}${src.variationPct.toFixed(1)}%)`}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attributeSchema, onUpdateLot, onClose }) {
   const panelRef = useRef(null);
   const previousFocusRef = useRef(null);
   const [currentLot, setCurrentLot] = useState(lot);
   const [adjustDelta, setAdjustDelta] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
+  const [hoveredTxnId, setHoveredTxnId] = useState(null);
   const [localAttributes, setLocalAttributes] = useState(lot.attributes || {});
   const [attrDirty, setAttrDirty] = useState(false);
 
@@ -1110,8 +1166,11 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
                 return (
                   <div
                     key={txn.id}
-                    className="flex items-start justify-between gap-3 py-3 border-b border-slate-100"
+                    className="py-3 border-b border-slate-100"
+                    onMouseEnter={() => txn.executionStatus && setHoveredTxnId(txn.id)}
+                    onMouseLeave={() => setHoveredTxnId(null)}
                   >
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span
@@ -1161,6 +1220,10 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
                     >
                       {txn.qtyChange === 0 ? '±0' : txn.qtyChange > 0 ? `+${txn.qtyChange.toLocaleString()}` : txn.qtyChange.toLocaleString()}
                     </div>
+                  </div>
+                  {hoveredTxnId === txn.id && txn.executionStatus && (
+                    <ExecutionStatusTooltip status={txn.executionStatus} />
+                  )}
                   </div>
                 );
               })}
@@ -1501,6 +1564,31 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
     setTimeout(() => {
       const now = Date.now();
 
+      // Snapshot execution status section data
+      const destTotal = destRows.reduce((sum, r) => sum + (parseFloat(r.qty) || 0), 0);
+      const executionStatus = {
+        destTotal,
+        destItemName: item?.name || '',
+        destFormFactor: recipe?.output?.formFactor || '',
+        sources: (recipe?.sources || []).map(src => {
+          const actualQty = (effectiveUsagesBySrc[src.id] || [])
+            .reduce((sum, r) => sum + (r.qtyToUse || 0), 0);
+          const expectedQty = recipe.output.qty > 0
+            ? (src.qty / recipe.output.qty) * destTotal : 0;
+          const variation = actualQty - expectedQty;
+          const variationPct = (destTotal > 0 && expectedQty > 0)
+            ? (variation / expectedQty) * 100 : null;
+          return {
+            itemName: getItemName(src.itemId),
+            formFactor: src.formFactor,
+            expectedQty,
+            actualQty,
+            variation,
+            variationPct,
+          };
+        }),
+      };
+
       // Compute total source cost for buy-in price derivation
       const findLot = (lotId) => {
         for (const cat of data.categories) {
@@ -1530,6 +1618,7 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
               qtyChange: parseFloat(r.qty),
               reference: null,
               sourceLotIds: allUsages.map(u => u.lotId),
+              executionStatus,
             }],
           };
         });
@@ -1541,6 +1630,7 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
           .map(r => ({ lotId: r.lotId, qtyToUse: r.qtyToUse })),
         newLots,
         executionType,
+        executionStatus,
       });
       setSubmitting(false);
     }, 200);
