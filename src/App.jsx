@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
+import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen, FlaskConical } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
-import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
+import { UomSection, UomConversionsSection, LocationsSection, RecipesSection } from './GlobalSettings.jsx';
 import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal, BatchMoveModal, AttachOrderModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS, SETUP_TUTORIAL_STEPS } from './Tutorial.jsx';
@@ -1197,8 +1197,9 @@ export default function App() {
             Configuration
           </p>
           {[
-            { id: '__uom',       label: 'Units of Measure', Icon: Ruler,  tutorialId: 'sidebar-uom'       },
-            { id: '__locations', label: 'Locations',         Icon: MapPin, tutorialId: 'sidebar-locations' },
+            { id: '__uom',       label: 'Units of Measure', Icon: Ruler,        tutorialId: 'sidebar-uom'       },
+            { id: '__locations', label: 'Locations',         Icon: MapPin,        tutorialId: 'sidebar-locations' },
+            { id: '__recipes',   label: 'Recipes',           Icon: FlaskConical,  tutorialId: undefined           },
           ].map(({ id, label, Icon, tutorialId }) => {
             const isActive = selectedCategoryId === id;
             return (
@@ -1245,6 +1246,14 @@ export default function App() {
                 <LocationsSection
                   locations={data.locations}
                   onUpdate={globalHandlers.onUpdate}
+                  onOpenModal={openModal}
+                />
+              );
+            }
+            if (selectedCategoryId === '__recipes') {
+              return (
+                <RecipesSection
+                  data={data}
                   onOpenModal={openModal}
                 />
               );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Pencil, Package, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Pencil, Package, ArrowRight, FlaskConical } from 'lucide-react';
 
 // ── Units of Measure ──────────────────────────────────────────────
 
@@ -393,6 +393,113 @@ export function LocationsSection({ locations, onUpdate, onOpenModal }) {
                             <Trash2 size={14} />
                           </button>
                         </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Recipes ───────────────────────────────────────────────────────
+
+export function RecipesSection({ data, onOpenModal }) {
+  // Collect all item-formfactor pairs that are To Manufacture or To Draw Down
+  const pairs = [];
+  for (const cat of data.categories) {
+    for (const item of cat.items) {
+      for (const ff of (item.formFactors || [])) {
+        const ffType = item.formFactorTypes?.[ff];
+        if (ffType === 'To Manufacture' || ffType === 'To Draw Down') {
+          const ffRecipes = item.formFactorRecipes?.[ff];
+          const hasRecipe = Array.isArray(ffRecipes) ? ffRecipes.length > 0 : !!ffRecipes;
+          pairs.push({ cat, item, ff, ffType, hasRecipe });
+        }
+      }
+    }
+  }
+
+  const typeStyle = {
+    'To Manufacture': { bg: '#CCFBF1', text: '#0D9488' },
+    'To Draw Down':   { bg: '#EDE9FE', text: '#8B5CF6' },
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>Recipes</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
+            Define production and draw-down recipes for manufactured form factors
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {pairs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-6" style={{ color: '#64748B' }}>
+            <FlaskConical size={36} className="mb-3 opacity-30" />
+            <p className="text-base font-medium mb-1" style={{ color: '#1E1B4B' }}>No manufacturable form factors</p>
+            <p className="text-sm text-center">
+              Assign "To Manufacture" or "To Draw Down" types to item form factors in the Catalog.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Item</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Form Factor</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Type</th>
+                  <th className="py-3 px-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Recipe</th>
+                  <th className="py-3 px-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: '#64748B' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pairs.map(({ cat, item, ff, ffType, hasRecipe }) => {
+                  const colors = typeStyle[ffType];
+                  return (
+                    <tr key={`${item.id}-${ff}`} className="border-t border-slate-100 hover:bg-slate-50 transition-colors duration-150">
+                      <td className="py-3 px-4">
+                        <p className="text-sm font-medium" style={{ color: '#1E1B4B' }}>{item.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{cat.name}</p>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}>
+                          {ff}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.bg, color: colors.text }}>
+                          {ffType}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {hasRecipe ? (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: '#DCFCE7', color: '#16A34A' }}>
+                            Defined
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: '#FEF9C3', color: '#CA8A04' }}>
+                            Not set
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                          style={{ backgroundColor: colors.text, color: '#fff' }}
+                          onClick={() => onOpenModal('editRecipe', { categoryId: cat.id, item, formFactor: ff })}
+                        >
+                          <FlaskConical size={11} />
+                          {hasRecipe ? 'Edit Recipe' : 'Create Recipe'}
+                        </button>
                       </td>
                     </tr>
                   );

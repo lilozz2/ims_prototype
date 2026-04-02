@@ -658,50 +658,28 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
                 </button>
                 )}
                 {ffType === 'To Manufacture' && (
-                  <>
-                    <button
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: '#0D9488', color: '#fff' }}
-                      data-tutorial={item.id === 'marker-001' && ffName === '200L drum' ? 'recipe-btn-marker-200L' : undefined}
-                      onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
-                    >
-                      <FlaskConical size={11} />
-                      {ffRecipe ? 'Edit Recipe' : 'Create Recipe'}
-                    </button>
-                    {ffRecipe && (
-                      <button
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                        style={{ backgroundColor: '#0D9488', color: '#fff' }}
-                        data-tutorial={item.id === 'marker-001' && ffName === '200L drum' ? 'produce-btn-marker-200L' : undefined}
-                        onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
-                      >
-                        Produce
-                      </button>
-                    )}
-                  </>
+                  <button
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-opacity"
+                    style={{ backgroundColor: '#0D9488', color: '#fff', opacity: ffRecipe ? 1 : 0.4, cursor: ffRecipe ? 'pointer' : 'not-allowed' }}
+                    data-tutorial={item.id === 'marker-001' && ffName === '200L drum' ? 'produce-btn-marker-200L' : undefined}
+                    disabled={!ffRecipe}
+                    title={!ffRecipe ? 'Define a recipe in Configuration → Recipes first' : undefined}
+                    onClick={ffRecipe ? () => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName }) : undefined}
+                  >
+                    Produce
+                  </button>
                 )}
                 {ffType === 'To Draw Down' && (
-                  <>
-                    <button
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
-                      data-tutorial={item.id === 'marker-001' && ffName === '5L Jerry can' ? 'drawdown-btn-marker-5L' : undefined}
-                      onClick={() => onOpenModal('editRecipe', { categoryId: category.id, item, formFactor: ffName })}
-                    >
-                      <FlaskConical size={11} />
-                      {ffRecipe ? 'Edit Drawdown' : 'Create Drawdown'}
-                    </button>
-                    {ffRecipe && (
-                      <button
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
-                        style={{ backgroundColor: '#8B5CF6', color: '#fff' }}
-                        data-tutorial={item.id === 'marker-001' && ffName === '5L Jerry can' ? 'drawdown-execute-btn-marker-5L' : undefined}
-                        onClick={() => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName })}
-                      >
-                        Draw Down
-                      </button>
-                    )}
-                  </>
+                  <button
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-opacity"
+                    style={{ backgroundColor: '#8B5CF6', color: '#fff', opacity: ffRecipe ? 1 : 0.4, cursor: ffRecipe ? 'pointer' : 'not-allowed' }}
+                    data-tutorial={item.id === 'marker-001' && ffName === '5L Jerry can' ? 'drawdown-execute-btn-marker-5L' : undefined}
+                    disabled={!ffRecipe}
+                    title={!ffRecipe ? 'Define a recipe in Configuration → Recipes first' : undefined}
+                    onClick={ffRecipe ? () => onOpenModal('produceLot', { categoryId: category.id, item, formFactor: ffName }) : undefined}
+                  >
+                    Draw Down
+                  </button>
                 )}
               </>
             );
