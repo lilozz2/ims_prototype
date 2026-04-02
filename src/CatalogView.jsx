@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronDown, Plus, Package, Layers, Play } from 'lucide-react';
 
-function LotRow({ lot, onLotClick }) {
+function LotRow({ lot, unitPrice, onLotClick }) {
   const [highlighted, setHighlighted] = useState(lot.highlightNew);
   const timerRef = useRef(null);
 
@@ -35,7 +35,7 @@ function LotRow({ lot, onLotClick }) {
         {lot.qty.toLocaleString()}
       </td>
       <td className="py-2 px-3" style={{ fontSize: '13px', color: '#10B981', fontWeight: 500 }}>
-        ${lot.buyInPrice.toFixed(2)}
+        {unitPrice != null ? `$${unitPrice.toFixed(4)}` : '—'}
       </td>
     </tr>
   );
@@ -153,7 +153,7 @@ function ItemRow({ item, category, onCreateLot, onLotClick, onProduceLot }) {
                           className="py-1.5 px-3 text-left text-xs font-medium uppercase tracking-wider"
                           style={{ color: '#94A3B8' }}
                         >
-                          Buy-in Price
+                          Unit Price
                         </th>
                       </tr>
                     </thead>

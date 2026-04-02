@@ -510,7 +510,51 @@ function WarehousePolicyTab({ category, locations, onUpdate, onOpenModal }) {
 
 // ── Item-Form-Factor Tab ──────────────────────────────────────────
 
-function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOpenModal, onUpdateLot }) {
+function OrderGroupSection({ order, orderLots, unitPrice, groupLabel, categoryId, itemId, onDeleteOrder, renderLotRow }) {
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    onDeleteOrder({ categoryId, itemId, orderId: order.id });
+  };
+
+  const currentPrice = order.currentPrice ?? order.totalPurchasePrice;
+  const hasDeduction = currentPrice !== order.totalPurchasePrice;
+
+  return (
+    <div>
+      {/* Order/Cost label row */}
+      <div
+        className="flex items-center gap-2 px-4 py-1.5 border-t border-slate-100"
+        style={{ backgroundColor: '#F5F3FF' }}
+      >
+        <div style={{ width: '3px', height: '16px', borderRadius: '2px', backgroundColor: '#6366F1', flexShrink: 0 }} />
+        <span className="text-xs" style={{ color: '#94A3B8' }}>
+          {groupLabel} · {orderLots.length} lot{orderLots.length !== 1 ? 's' : ''}
+          {' · '}${order.totalPurchasePrice.toFixed(2)} total
+          {hasDeduction && (
+            <span style={{ color: '#6366F1', fontWeight: 500 }}>
+              {' · '}Current: ${currentPrice.toFixed(2)}
+            </span>
+          )}
+        </span>
+        <button
+          className="ml-auto p-1 rounded hover:bg-red-100 transition-colors cursor-pointer"
+          style={{ color: '#DC2626' }}
+          onClick={handleDelete}
+          title={`Remove ${groupLabel.toLowerCase()} (lots are kept)`}
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+
+      {/* Lots grouped under this order/cost */}
+      <div style={{ borderLeft: '3px solid #6366F1', marginLeft: '16px' }}>
+        {orderLots.map(lot => renderLotRow(lot, unitPrice))}
+      </div>
+    </div>
+  );
+}
+
+function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOpenModal, onUpdateLot, onDeleteOrder }) {
   const [expanded, setExpanded] = useState(true);
   const [editingLotId, setEditingLotId] = useState(null);
   const [editQty, setEditQty] = useState('');
@@ -525,6 +569,8 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
   const ffLots = (item.lots || []).filter(lot => lot.formFactor === ffName);
   const attributeSchema = (category.attributeSchemas || [])
     .find(s => s.itemId === item.id && s.formFactor === ffName) || null;
+  const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
+  const groupLabel = ffType === 'To Purchase' ? 'Order' : 'Cost';
 
   const allSelected = ffLots.length > 0 && ffLots.every(l => selectedLotIds.has(l.id));
   const someSelected = ffLots.some(l => selectedLotIds.has(l.id));
@@ -596,7 +642,6 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
         </span>
         <div className="ml-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
           {(() => {
-            const ffType = item.formFactorTypes?.[ffName] || 'To Purchase';
             const ffRecipes = item.formFactorRecipes?.[ffName];
             const ffRecipe = Array.isArray(ffRecipes) ? ffRecipes.length > 0 : !!ffRecipes;
             return (
@@ -609,7 +654,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
                   onClick={() => onOpenModal('createLots', { categoryId: category.id, item, formFactor: ffName })}
                 >
                   <Plus size={11} />
-                  Purchase Lots
+                  Create Lots
                 </button>
                 )}
                 {ffType === 'To Manufacture' && (
@@ -671,13 +716,27 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
             <div className="px-4 py-3 text-xs text-center border-t border-slate-100" style={{ color: '#94A3B8' }}>
               No lots for this form factor
             </div>
-          ) : (
-            ffLots.map(lot => (
+          ) : (() => {
+            // Compute unit price per lot from orders (using lot.orderId)
+            const orderMap = Object.fromEntries((item.orders || []).map(o => [o.id, o]));
+            const priceByLotId = {};
+            (item.orders || []).forEach(order => {
+              const allOrderLots = (item.lots || []).filter(l => l.orderId === order.id);
+              const totalQty = allOrderLots.reduce((s, l) => s + (l.qty || 0), 0);
+              const unitPrice = totalQty > 0 ? order.totalPurchasePrice / totalQty : null;
+              allOrderLots.forEach(l => { priceByLotId[l.id] = unitPrice; });
+            });
+
+            // Group ffLots by orderId
+            const ungroupedLots = ffLots.filter(l => !l.orderId);
+            const orderIdsInFF = [...new Set(ffLots.filter(l => l.orderId).map(l => l.orderId))];
+            const ordersInFF = orderIdsInFF.map(id => orderMap[id]).filter(Boolean);
+
+            const renderLotRow = (lot, unitPrice) => (
               <div
                 key={lot.id}
                 className="px-4 py-2.5 border-t border-slate-100 hover:bg-slate-50 transition-colors"
               >
-                {/* Row 1: identifiers + qty/price */}
                 <div
                   className="flex items-center gap-3 cursor-pointer"
                   onClick={() =>
@@ -748,16 +807,41 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
                         )}
                       </span>
                     )}
-                    {lot.buyInPrice > 0 && (
-                      <span className="text-xs" style={{ color: '#94A3B8' }}>
-                        ${(lot.buyInPrice * (lot.qty || 0)).toFixed(2)}
+                    {unitPrice != null && (
+                      <span className="text-xs" style={{ color: '#1E1B4B' }}>
+                        ${(unitPrice * (lot.qty || 0)).toFixed(2)}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-            ))
-          )}
+            );
+
+            return (
+              <>
+                {ungroupedLots.map(lot => renderLotRow(lot, priceByLotId[lot.id] ?? null))}
+                {ordersInFF.map(order => {
+                  const orderLotsInFF = ffLots.filter(l => l.orderId === order.id);
+                  const allOrderLots = (item.lots || []).filter(l => l.orderId === order.id);
+                  const totalQty = allOrderLots.reduce((s, l) => s + (l.qty || 0), 0);
+                  const unitPrice = totalQty > 0 ? order.totalPurchasePrice / totalQty : null;
+                  return (
+                    <OrderGroupSection
+                      key={order.id}
+                      order={order}
+                      orderLots={orderLotsInFF}
+                      unitPrice={unitPrice}
+                      groupLabel={groupLabel}
+                      categoryId={category.id}
+                      itemId={item.id}
+                      onDeleteOrder={onDeleteOrder}
+                      renderLotRow={renderLotRow}
+                    />
+                  );
+                })}
+              </>
+            );
+          })()}
           {selectedLotIds.size > 0 && (
             <div
               className="flex items-center justify-between px-4 py-2 border-t"
@@ -780,7 +864,7 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
                 </button>
                 {batchMenuOpen && (
                   <div
-                    className="absolute right-0 bottom-full mb-1 w-36 rounded-xl shadow-lg z-10 overflow-hidden"
+                    className="absolute right-0 bottom-full mb-1 w-44 rounded-xl shadow-lg z-10 overflow-hidden"
                     style={{ backgroundColor: '#fff', border: '1px solid #E2E8F0' }}
                   >
                     <button
@@ -800,6 +884,25 @@ function FormFactorGroupRow({ item, ffName, category, locations, uomSymbol, onOp
                     >
                       Move
                     </button>
+                    {ffType === 'To Purchase' && (
+                      <button
+                        className="w-full text-left text-xs px-3 py-2.5 hover:bg-slate-50 font-medium"
+                        style={{ color: '#1E1B4B' }}
+                        onClick={() => {
+                          setBatchMenuOpen(false);
+                          const selectedLots = ffLots.filter(l => selectedLotIds.has(l.id));
+                          onOpenModal('attachOrder', {
+                            categoryId: category.id,
+                            item,
+                            lotIds: [...selectedLotIds],
+                            lots: selectedLots,
+                            onAttached: () => setSelectedLotIds(new Set()),
+                          });
+                        }}
+                      >
+                        Attach Order
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -875,6 +978,7 @@ function ItemFormFactorTab({ category, data, onUpdate, onOpenModal }) {
                     uomSymbol={getUomSymbol(item.uomId)}
                     onOpenModal={onOpenModal}
                     onUpdateLot={(lot) => onUpdate.updateLot({ categoryId: category.id, itemId: item.id, lot })}
+                    onDeleteOrder={(payload) => onUpdate.deleteOrder(payload)}
                   />
                 ))
               )}

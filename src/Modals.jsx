@@ -236,7 +236,6 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
   const [locationId, setLocationId] = useState('');
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [schema, setSchema] = useState(null);
-  const [totalPrice, setTotalPrice] = useState('');
   const [entries, setEntries] = useState(() => [makeEntry()]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -293,13 +292,10 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
     if (!formFactor || validEntries.length === 0) return;
     setSubmitting(true);
     setTimeout(() => {
-      const totalQty = validEntries.reduce((sum, e) => sum + parseFloat(e.qty), 0);
-      const buyInPrice = totalQty > 0 ? (parseFloat(totalPrice) || 0) / totalQty : 0;
       const lots = validEntries.map(e => ({
         id: generateLotId(item?.sku || '', e.attrValues),
         formFactor,
         qty: parseFloat(e.qty),
-        buyInPrice,
         locationId,
         attributes: e.attrValues,
         highlightNew: true,
@@ -310,7 +306,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
   };
 
   return (
-    <ModalShell title={`Purchase Lots — ${item?.name}`} onClose={onClose}>
+    <ModalShell title={`Create Lots — ${item?.name}`} onClose={onClose}>
       <FormField label="Category">
         <ReadOnlyField value={category?.name} />
       </FormField>
@@ -341,35 +337,6 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
           </SelectInput>
         </FormField>
       </div>
-
-      {(() => {
-        const totalQty = entries.reduce((sum, e) => sum + (parseFloat(e.qty) || 0), 0);
-        const pricePerUnit = totalQty > 0 && totalPrice
-          ? (parseFloat(totalPrice) / totalQty).toFixed(4)
-          : null;
-        return (
-          <FormField
-            label="Total Price"
-            hint={pricePerUnit ? `Price per unit: $${pricePerUnit}` : undefined}
-          >
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#94A3B8' }}>$</span>
-              <input
-                type="number"
-                className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all duration-150"
-                style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
-                value={totalPrice}
-                onChange={e => setTotalPrice(e.target.value)}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
-                onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
-              />
-            </div>
-          </FormField>
-        );
-      })()}
 
       {/* Lot entries */}
       <div className="border-t border-slate-100 pt-4 mt-2" data-tutorial="purchase-modal-lots">
@@ -487,7 +454,7 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
         onClick={handleSubmit}
         disabled={!formFactor || !locationId || !entries.some(e => e.qty)}
       >
-        Purchase Lots
+        Create Lots
       </SubmitButton>
     </ModalShell>
   );
@@ -1528,11 +1495,6 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
         return null;
       };
       const allUsages = Object.values(effectiveUsagesBySrc).flat().filter(r => r.qtyToUse > 0);
-      const totalSourceCost = allUsages.reduce((sum, r) => {
-        const lot = findLot(r.lotId);
-        return sum + r.qtyToUse * (lot?.buyInPrice || 0);
-      }, 0);
-
       const newLots = destRows
         .filter(r => parseFloat(r.qty) > 0)
         .map((r, i) => {
@@ -1541,7 +1503,6 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
             id: batchId,
             formFactor: recipe.output.formFactor,
             qty: parseFloat(r.qty),
-            buyInPrice: parseFloat(r.qty) > 0 ? totalSourceCost / parseFloat(r.qty) : 0,
             locationId,
             attributes: { ...attrValues },
             highlightNew: true,
@@ -2031,6 +1992,85 @@ export function ExecutionModal({ item, recipes, data, executionType = 'produce',
 }
 
 // ── BatchMoveModal ─────────────────────────────────────────────
+
+// ── AttachOrderModal ───────────────────────────────────────────
+
+export function AttachOrderModal({ lots, onSubmit, onClose }) {
+  const [totalPrice, setTotalPrice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const conflicting = lots.filter(l => l.orderId);
+
+  const handleSubmit = () => {
+    setError(null);
+
+    if (conflicting.length > 0) {
+      setError(
+        `${conflicting.length} lot${conflicting.length !== 1 ? 's' : ''} already belong to an order: ${conflicting.map(l => l.id).join(', ')}`
+      );
+      return;
+    }
+
+    const price = parseFloat(totalPrice);
+    if (isNaN(price) || price < 0) {
+      setError('Total purchase price must be a valid non-negative number.');
+      return;
+    }
+
+    setSubmitting(true);
+    setTimeout(() => {
+      onSubmit({ lotIds: lots.map(l => l.id), totalPurchasePrice: price });
+      setSubmitting(false);
+    }, 200);
+  };
+
+  return (
+    <ModalShell title={`Attach Order — ${lots.length} Lot${lots.length !== 1 ? 's' : ''}`} onClose={onClose}>
+      <div className="rounded-xl p-3 mb-5" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+        <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#94A3B8' }}>
+          Selected Lots
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {lots.map(lot => (
+            <span key={lot.id} className="text-xs font-mono px-2 py-0.5 rounded"
+                  style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}>
+              {lot.id}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 px-3 py-2.5 rounded-lg text-xs font-medium"
+             style={{ backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+          {error}
+        </div>
+      )}
+
+      {conflicting.length > 0 && !error && (
+        <div className="mb-4 px-3 py-2.5 rounded-lg text-xs font-medium"
+             style={{ backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+          {conflicting.length} lot{conflicting.length !== 1 ? 's' : ''} already belong to an order and cannot be re-attached.
+        </div>
+      )}
+
+      <FormField label="Total Purchase Price" required hint="Divided across all lot quantities to derive price per lot.">
+        <NumberInput
+          value={totalPrice}
+          onChange={e => setTotalPrice(e.target.value)}
+          placeholder="0.00"
+          min="0"
+          step="0.01"
+        />
+      </FormField>
+
+      <SubmitButton loading={submitting} onClick={handleSubmit} disabled={conflicting.length > 0 || totalPrice === ''}>
+        Attach Order
+      </SubmitButton>
+    </ModalShell>
+  );
+}
 
 export function BatchMoveModal({ lots, locations, onMove, onClose }) {
   const [newLocationId, setNewLocationId] = useState('');

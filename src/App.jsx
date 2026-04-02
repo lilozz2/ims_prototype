@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Package, BarChart3, Ruler, ArrowLeftRight, MapPin, BookOpen } from 'lucide-react';
 import CatalogManager from './CatalogManager.jsx';
 import { UomSection, UomConversionsSection, LocationsSection } from './GlobalSettings.jsx';
-import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal, BatchMoveModal } from './Modals.jsx';
+import { PurchaseLotsModal, AddItemModal, SchemaBuilderModal, AddPolicyModal, AddLocationModal, ExecutionModal, LotTransactionHistoryModal, AttachFormFactorsModal, BatchMoveModal, AttachOrderModal } from './Modals.jsx';
 import RecipeBuilder from './RecipeBuilder.jsx';
 import Tutorial, { TUTORIAL_STEPS, SETUP_TUTORIAL_STEPS } from './Tutorial.jsx';
 
@@ -30,7 +30,6 @@ const INITIAL_DATA = {
            *   id: string,
            *   formFactor: string,
            *   qty: number,            // current quantity (net sum of all transaction qtyChange values)
-           *   buyInPrice: number,
            *   highlightNew: boolean,
            *   transactions: Array<{
            *     id: string,
@@ -46,7 +45,6 @@ const INITIAL_DATA = {
               id: 'PWD001-20250110-1-a3f2b1c4',
               formFactor: '2.5kg bag',
               qty: 2.5,
-              buyInPrice: 2,
               locationId: 'LOC-001',
               attributes: { 'Manufacturing date': '2025-01-10', 'Production batch': 1 },
               highlightNew: false,
@@ -64,6 +62,7 @@ const INITIAL_DATA = {
           warehousePolicies: [],
           formFactorTypes: { '2.5kg bag': 'To Purchase' },
           formFactorRecipes: {},
+          orders: [],
         },
         {
           id: 'solvent-001',
@@ -77,7 +76,6 @@ const INITIAL_DATA = {
               id: 'SLV001-20250308-d7e8f9a2',
               formFactor: '200L drum',
               qty: 200,
-              buyInPrice: 1.25,
               locationId: 'LOC-002',
               attributes: { 'Manufacturing date': '2025-03-08' },
               highlightNew: false,
@@ -95,6 +93,7 @@ const INITIAL_DATA = {
           warehousePolicies: [],
           formFactorTypes: { '200L drum': 'To Purchase' },
           formFactorRecipes: {},
+          orders: [],
         },
       ],
       attributeSchemas: [
@@ -138,7 +137,6 @@ const INITIAL_DATA = {
               id: 'MKR001-20250128-1-b4c5d6e7',
               formFactor: '1L bottle',
               qty: 1,
-              buyInPrice: 3.20,
               locationId: 'LOC-003',
               attributes: {},
               highlightNew: false,
@@ -156,7 +154,6 @@ const INITIAL_DATA = {
               id: 'MKR001-20250225-2-c8d9e0f1',
               formFactor: '1L bottle',
               qty: 1,
-              buyInPrice: 3.10,
               locationId: 'LOC-003',
               attributes: {},
               highlightNew: false,
@@ -174,7 +171,6 @@ const INITIAL_DATA = {
               id: 'MKR001-20250212-2-f2a3b4c5',
               formFactor: '5L Jerry can',
               qty: 5,
-              buyInPrice: 2.75,
               locationId: 'LOC-003',
               attributes: {},
               highlightNew: false,
@@ -199,6 +195,7 @@ const INITIAL_DATA = {
           warehousePolicies: [],
           formFactorTypes: { '200L drum': 'To Manufacture', '1L bottle': 'To Draw Down', '5L Jerry can': 'To Draw Down' },
           formFactorRecipes: {},
+          orders: [],
         },
       ],
       attributeSchemas: [
@@ -673,11 +670,43 @@ export default function App() {
 
   const handleExecuteRecipe = useCallback(({ categoryId, item, locationId, sourceLotUsages, newLots, executionType }) => {
     setData(prev => {
+      const r2 = (n) => parseFloat(n.toFixed(2));
+
+      // ── Step 1: snapshot unit prices from prev state ──
+      const allItemsFlat = prev.categories.flatMap(c => c.items);
+      const orderUnitPrice = {};
+      allItemsFlat.forEach(itm => {
+        (itm.orders || []).forEach(order => {
+          const orderLots = itm.lots.filter(l => l.orderId === order.id);
+          const totalQty = orderLots.reduce((s, l) => s + (l.qty || 0), 0);
+          orderUnitPrice[order.id] = totalQty > 0 ? order.totalPurchasePrice / totalQty : 0;
+        });
+      });
+      const lotToOrderId = {};
+      allItemsFlat.forEach(itm => itm.lots.forEach(l => { if (l.orderId) lotToOrderId[l.id] = l.orderId; }));
+
+      // ── Step 2: compute cost deductions ──
+      const orderDeductions = {};
+      let totalDestCost = 0;
+      sourceLotUsages.forEach(usage => {
+        const srcOrderId = lotToOrderId[usage.lotId];
+        if (srcOrderId) {
+          const cost = (orderUnitPrice[srcOrderId] || 0) * usage.qtyToUse;
+          orderDeductions[srcOrderId] = (orderDeductions[srcOrderId] || 0) + cost;
+          totalDestCost += cost;
+        }
+      });
+
+      // ── Step 3: prepare destination order ──
+      const newOrderId = totalDestCost > 0 ? `ORD-${Date.now()}` : null;
+      const taggedNewLots = newLots.map(lot => newOrderId ? { ...lot, orderId: newOrderId } : lot);
+
+      // ── Step 4: mutate ──
       let newData = { ...prev, categories: prev.categories.map(cat => ({ ...cat, items: cat.items.map(i => ({ ...i, lots: [...i.lots] })) })) };
 
-      // Deduct each explicitly chosen source lot
+      // Deduct source lot quantities + record transactions
+      const ref = taggedNewLots[0]?.id || 'PROD-' + Date.now();
       sourceLotUsages.forEach((usage, idx) => {
-        const ref = newLots[0]?.id || 'PROD-' + Date.now();
         newData.categories = newData.categories.map(cat => ({
           ...cat,
           items: cat.items.map(i => ({
@@ -700,19 +729,40 @@ export default function App() {
         }));
       });
 
-      // Add new output lots
+      // Reduce currentPrice on source orders
+      if (Object.keys(orderDeductions).length > 0) {
+        newData.categories = newData.categories.map(cat => ({
+          ...cat,
+          items: cat.items.map(i => ({
+            ...i,
+            orders: (i.orders || []).map(order => {
+              const deduction = orderDeductions[order.id];
+              if (!deduction) return order;
+              return { ...order, currentPrice: Math.max(0, r2((order.currentPrice ?? order.totalPurchasePrice) - deduction)) };
+            }),
+          })),
+        }));
+      }
+
+      // Add destination lots and (if costed) the new order
       newData.categories = newData.categories.map(cat =>
         cat.id !== categoryId ? cat : {
           ...cat,
           items: cat.items.map(i =>
-            i.id !== item.id ? i : { ...i, lots: [...i.lots, ...newLots] }
+            i.id !== item.id ? i : {
+              ...i,
+              lots: [...i.lots, ...taggedNewLots],
+              orders: newOrderId
+                ? [...(i.orders || []), { id: newOrderId, totalPurchasePrice: r2(totalDestCost), currentPrice: r2(totalDestCost) }]
+                : (i.orders || []),
+            }
           ),
         }
       );
 
       return newData;
     });
-    showToast(`Production complete. ${newLots.length} lot(s) created.`, 'success');
+    showToast(`${executionType === 'draw-down' ? 'Draw-down' : 'Production'} complete. ${newLots.length} lot(s) created.`, 'success');
     closeModal();
   }, [showToast, closeModal]);
 
@@ -747,6 +797,50 @@ export default function App() {
     closeModal();
   }, [showToast, closeModal]);
 
+  const handleAttachOrder = useCallback(({ categoryId, itemId, lotIds, totalPurchasePrice }) => {
+    const orderId = `ORD-${Date.now()}`;
+    setData(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat =>
+        cat.id !== categoryId ? cat : {
+          ...cat,
+          items: cat.items.map(item =>
+            item.id !== itemId ? item : {
+              ...item,
+              orders: [...(item.orders || []), { id: orderId, totalPurchasePrice, currentPrice: totalPurchasePrice }],
+              lots: item.lots.map(lot =>
+                lotIds.includes(lot.id) ? { ...lot, orderId } : lot
+              ),
+            }
+          ),
+        }
+      ),
+    }));
+    showToast(`Order attached (${lotIds.length} lot${lotIds.length !== 1 ? 's' : ''})`, 'success');
+    closeModal();
+  }, [showToast, closeModal]);
+
+  const handleDeleteOrder = useCallback(({ categoryId, itemId, orderId }) => {
+    setData(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat =>
+        cat.id !== categoryId ? cat : {
+          ...cat,
+          items: cat.items.map(item =>
+            item.id !== itemId ? item : {
+              ...item,
+              orders: (item.orders || []).filter(o => o.id !== orderId),
+              lots: item.lots.map(lot =>
+                lot.orderId === orderId ? { ...lot, orderId: undefined } : lot
+              ),
+            }
+          ),
+        }
+      ),
+    }));
+    showToast('Order removed', 'success');
+  }, [showToast]);
+
   // ── Callbacks passed down ──────────────────────────────────────
 
   const managerHandlers = {
@@ -761,6 +855,7 @@ export default function App() {
       editPolicy: handleEditPolicy,
       removePolicy: handleRemovePolicy,
       updateLot: handleUpdateLot,
+      deleteOrder: handleDeleteOrder,
     },
     onOpenModal: openModal,
   };
@@ -937,6 +1032,18 @@ export default function App() {
               newLocationId,
             });
             payload.onMoved?.();
+          }}
+          onClose={closeModal}
+        />
+      );
+    }
+    if (type === 'attachOrder') {
+      return (
+        <AttachOrderModal
+          lots={payload.lots}
+          onSubmit={({ lotIds, totalPurchasePrice }) => {
+            handleAttachOrder({ categoryId: payload.categoryId, itemId: payload.item.id, lotIds, totalPurchasePrice });
+            payload.onAttached?.();
           }}
           onClose={closeModal}
         />
