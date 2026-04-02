@@ -863,6 +863,7 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
   const previousFocusRef = useRef(null);
   const [currentLot, setCurrentLot] = useState(lot);
   const [adjustDelta, setAdjustDelta] = useState('');
+  const [adjustReason, setAdjustReason] = useState('');
   const [localAttributes, setLocalAttributes] = useState(lot.attributes || {});
   const [attrDirty, setAttrDirty] = useState(false);
 
@@ -876,6 +877,7 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
       timestamp: new Date().toISOString(),
       qtyChange: parseFloat(delta.toFixed(6)),
       reference: null,
+      reason: adjustReason.trim() || null,
     };
     const updated = {
       ...currentLot,
@@ -885,6 +887,7 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
     setCurrentLot(updated);
     if (onUpdateLot) onUpdateLot(updated);
     setAdjustDelta('');
+    setAdjustReason('');
   };
 
   const handleSaveAttributes = () => {
@@ -1066,6 +1069,15 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
                 Apply
               </button>
             </div>
+            <input
+              type="text"
+              placeholder="Reason (optional)"
+              value={adjustReason}
+              onChange={e => setAdjustReason(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleApplyAdjust()}
+              className="mt-2 w-full px-2 py-1 rounded border text-xs outline-none"
+              style={{ borderColor: '#E2E8F0', color: '#1E1B4B' }}
+            />
           </div>
         )}
 
@@ -1112,6 +1124,11 @@ export function LotTransactionHistoryModal({ lot, locations, uomSymbol, attribut
                           {new Date(txn.timestamp).toLocaleString()}
                         </span>
                       </div>
+                      {txn.reason && (
+                        <p className="text-xs mt-0.5 italic" style={{ color: '#64748B' }}>
+                          "{txn.reason}"
+                        </p>
+                      )}
                       {(txn.type === 'production-use' || (txn.type === 'draw-down' && txn.qtyChange < 0)) && txn.reference && (
                         <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
                           Dest:{' '}
