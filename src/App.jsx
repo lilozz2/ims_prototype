@@ -140,7 +140,7 @@ const INITIAL_DATA = {
               qty: 1,
               buyInPrice: 3.20,
               locationId: 'LOC-003',
-              attributes: { 'Manufacturing date': '2025-01-28', 'blending batch': 1 },
+              attributes: {},
               highlightNew: false,
               transactions: [
                 {
@@ -158,7 +158,7 @@ const INITIAL_DATA = {
               qty: 1,
               buyInPrice: 3.10,
               locationId: 'LOC-003',
-              attributes: { 'Manufacturing date': '2025-02-25', 'blending batch': 2 },
+              attributes: {},
               highlightNew: false,
               transactions: [
                 {
@@ -176,7 +176,7 @@ const INITIAL_DATA = {
               qty: 5,
               buyInPrice: 2.75,
               locationId: 'LOC-003',
-              attributes: { 'Manufacturing date': '2025-02-12', 'blending batch': 2 },
+              attributes: {},
               highlightNew: false,
               transactions: [
                 {
@@ -215,19 +215,13 @@ const INITIAL_DATA = {
           id: 'as-5',
           itemId: 'marker-001',
           formFactor: '1L bottle',
-          fields: [
-            { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'blending batch',     type: 'text', required: true },
-          ],
+          fields: [],
         },
         {
           id: 'as-6',
           itemId: 'marker-001',
           formFactor: '5L Jerry can',
-          fields: [
-            { name: 'Manufacturing date', type: 'date',   required: true },
-            { name: 'blending batch',     type: 'text', required: true },
-          ],
+          fields: [],
         },
       ],
     },
