@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, X, ArrowRight, Check } from 'lucide-react';
 
 // ── Source Node Popover ───────────────────────────────────────────
 
-function SourceNodePopover({ node, data, onSave, onClose }) {
+function SourceNodePopover({ node, data, onSave, onClose, hideQty = false }) {
   const [itemId, setItemId] = useState(node?.itemId || '');
   const [formFactor, setFormFactor] = useState(node?.formFactor || '');
   const [qty, setQty] = useState(node?.qty || 1);
@@ -43,12 +43,12 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
   };
 
   const handleSave = () => {
-    if (!itemId || !formFactor || qty < 1) return;
+    if (!itemId || !formFactor || (!hideQty && qty < 1)) return;
     onSave({
       id: node?.id || 'n-' + Date.now().toString(36),
       itemId,
       formFactor,
-      qty: parseFloat(qty),
+      qty: hideQty ? (node?.qty ?? 0) : parseFloat(qty),
     });
   };
 
@@ -109,33 +109,35 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
           </select>
         </div>
 
-        <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Quantity</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-              style={{ borderColor: '#E2E8F0' }}
-              value={qty}
-              onChange={e => setQty(e.target.value)}
-              min="0"
-              step="any"
-            />
-            {selectedItem && data.uom.find(u => u.id === selectedItem.uomId)?.symbol && (
-              <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
-                {data.uom.find(u => u.id === selectedItem.uomId).symbol}
-              </span>
-            )}
+        {!hideQty && (
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Quantity</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+                style={{ borderColor: '#E2E8F0' }}
+                value={qty}
+                onChange={e => setQty(e.target.value)}
+                min="0"
+                step="any"
+              />
+              {selectedItem && data.uom.find(u => u.id === selectedItem.uomId)?.symbol && (
+                <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                  {data.uom.find(u => u.id === selectedItem.uomId).symbol}
+                </span>
+              )}
+            </div>
+            <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Per batch</p>
           </div>
-          <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Per batch</p>
-        </div>
+        )}
 
         <div className="flex items-center gap-2 pt-1">
           <button
             className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90"
             style={{ backgroundColor: '#6366F1', color: '#fff' }}
             onClick={handleSave}
-            disabled={!itemId || !formFactor || !qty}
+            disabled={!itemId || !formFactor || (!hideQty && !qty)}
           >
             <Check size={14} className="inline mr-1" />
             Save
@@ -155,7 +157,7 @@ function SourceNodePopover({ node, data, onSave, onClose }) {
 
 // ── Source Node Card ──────────────────────────────────────────────
 
-function SourceNodeCard({ node, data, onEdit, onDelete }) {
+function SourceNodeCard({ node, data, onEdit, onDelete, hideQty = false }) {
   const [showPopover, setShowPopover] = useState(false);
 
   const getItemName = (itemId) => {
@@ -206,16 +208,20 @@ function SourceNodeCard({ node, data, onEdit, onDelete }) {
             </button>
           </div>
         </div>
-        <div className="text-sm font-semibold" style={{ color: '#6366F1' }}>
-          {node.qty.toLocaleString()}{getUomSymbol(node.itemId) ? ` ${getUomSymbol(node.itemId)}` : ''}
-        </div>
-        <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>per batch</p>
+        {!hideQty && (
+          <>
+            <div className="text-sm font-semibold" style={{ color: '#6366F1' }}>
+              {node.qty.toLocaleString()}{getUomSymbol(node.itemId) ? ` ${getUomSymbol(node.itemId)}` : ''}
+            </div>
+          </>
+        )}
       </div>
 
       {showPopover && (
         <SourceNodePopover
           node={node}
           data={data}
+          hideQty={hideQty}
           onSave={(updated) => { onEdit(updated); setShowPopover(false); }}
           onClose={() => setShowPopover(false)}
         />
@@ -226,7 +232,7 @@ function SourceNodeCard({ node, data, onEdit, onDelete }) {
 
 // ── Add Source Node Card ──────────────────────────────────────────
 
-function AddSourceNodeCard({ data, onAdd }) {
+function AddSourceNodeCard({ data, onAdd, hideQty = false }) {
   const [showPopover, setShowPopover] = useState(false);
 
   return (
@@ -243,6 +249,7 @@ function AddSourceNodeCard({ data, onAdd }) {
         <SourceNodePopover
           node={null}
           data={data}
+          hideQty={hideQty}
           onSave={(node) => { onAdd(node); setShowPopover(false); }}
           onClose={() => setShowPopover(false)}
         />
@@ -251,47 +258,85 @@ function AddSourceNodeCard({ data, onAdd }) {
   );
 }
 
-// ── Destination Card (inline qty editing — item & form factor are pre-fixed) ──
+// ── Ratio Source Card (step 2 — qty input only, item/formFactor locked) ────────
 
-function DestinationCard({ output, item, data, onEdit }) {
-  const uomSymbol = data.uom.find(u => u.id === item?.uomId)?.symbol || '';
-
-  const handleQtyChange = (e) => {
-    const val = parseFloat(e.target.value);
-    if (!isNaN(val) && val >= 0) {
-      onEdit({ ...output, qty: val });
+function RatioSourceCard({ node, data, onUpdateQty, onDelete }) {
+  const getItemName = (itemId) => {
+    for (const cat of data.categories) {
+      const item = cat.items.find(i => i.id === itemId);
+      if (item) return item.name;
     }
+    return itemId;
   };
 
+  const getUomSymbol = (itemId) => {
+    for (const cat of data.categories) {
+      const item = cat.items.find(i => i.id === itemId);
+      if (item) return data.uom.find(u => u.id === item.uomId)?.symbol || '';
+    }
+    return '';
+  };
+
+  const uom = getUomSymbol(node.itemId);
+
+  return (
+    <div
+      className="bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-200 transition-all duration-150"
+      style={{ minWidth: '180px' }}
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold truncate" style={{ color: '#1E1B4B' }}>
+            {getItemName(node.itemId)}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>{node.formFactor}</p>
+        </div>
+        <button
+          className="p-1 rounded cursor-pointer hover:bg-red-50 transition-colors"
+          style={{ color: '#EF4444' }}
+          onClick={onDelete}
+          aria-label="Delete source"
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          type="number"
+          className="w-20 px-2 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+          style={{ borderColor: '#E2E8F0', color: '#6366F1', fontWeight: 600 }}
+          value={node.qty || ''}
+          onChange={e => {
+            const v = parseFloat(e.target.value);
+            if (!isNaN(v) && v >= 0) onUpdateQty(node.id, v);
+          }}
+          min="0"
+          step="any"
+          placeholder="0"
+        />
+        {uom && <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{uom}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Destination Card ──────────────────────────────────────────────
+
+function DestinationCard({ output, item, uomSymbol }) {
   return (
     <div
       className="bg-white rounded-xl border border-slate-200 p-4 transition-all duration-150"
       style={{ minWidth: '180px' }}
     >
-      {/* Fixed item name */}
       <p className="text-sm font-semibold truncate mb-0.5" style={{ color: '#1E1B4B' }}>
         {item.name}
       </p>
-      {/* Fixed form factor */}
-      <p className="text-xs mb-3" style={{ color: '#64748B' }}>{output?.formFactor}</p>
-
-      {/* Inline quantity input */}
-      <label className="block text-xs font-medium mb-1" style={{ color: '#64748B' }}>Quantity</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-          style={{ borderColor: '#E2E8F0' }}
-          value={output?.qty ?? 1}
-          onChange={handleQtyChange}
-          min="0"
-          step="any"
-        />
-        {uomSymbol && (
-          <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{uomSymbol}</span>
-        )}
-      </div>
-      <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Per batch</p>
+      <p className="text-xs" style={{ color: '#64748B' }}>{output?.formFactor}</p>
+      {uomSymbol && output?.qty != null && (
+        <p className="text-sm font-semibold mt-2" style={{ color: '#6366F1' }}>
+          {output.qty} {uomSymbol}
+        </p>
+      )}
     </div>
   );
 }
@@ -310,6 +355,9 @@ export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, 
     initialRecipes && initialRecipes.length > 0 ? initialRecipes : [makeBlankRecipe()]
   );
   const [activeIdx, setActiveIdx] = useState(0);
+  const [step, setStep] = useState(1);
+
+  useEffect(() => { setStep(1); }, [activeIdx]);
 
   const activeRecipe = recipes[activeIdx];
   const sources = activeRecipe.sources;
@@ -318,11 +366,14 @@ export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, 
   const updateActive = (patch) =>
     setRecipes(prev => prev.map((r, i) => i === activeIdx ? { ...r, ...patch } : r));
 
-  const canSave = sources.length >= 1 && output !== null;
+  const canProceedToStep2 = sources.length >= 1;
+  const canSave = sources.length >= 1 && output !== null && sources.every(s => s.qty > 0);
 
   const handleAddSource = (node) => updateActive({ sources: [...sources, node] });
   const handleEditSource = (updated) => updateActive({ sources: sources.map(n => n.id === updated.id ? updated : n) });
   const handleDeleteSource = (id) => updateActive({ sources: sources.filter(n => n.id !== id) });
+  const handleUpdateSourceQty = (id, qty) =>
+    updateActive({ sources: sources.map(n => n.id === id ? { ...n, qty } : n) });
   const handleSetOutput = (newOutput) => updateActive({ output: newOutput });
   const handleNameChange = (name) => updateActive({ name });
 
@@ -345,6 +396,7 @@ export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, 
   };
 
   const sourcesCount = sources.length;
+  const destUomSymbol = data.uom.find(u => u.id === item?.uomId)?.symbol || 'unit';
 
   return (
     <div
@@ -386,15 +438,35 @@ export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, 
             New Recipe
           </button>
         </div>
-        <button
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4"
-          style={{ backgroundColor: '#6366F1', color: '#fff' }}
-          onClick={handleSave}
-          disabled={!canSave}
-        >
-          <Check size={14} />
-          Save Recipe
-        </button>
+        {step === 1 ? (
+          <button
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4"
+            style={{ backgroundColor: '#6366F1', color: '#fff' }}
+            onClick={() => setStep(2)}
+            disabled={!canProceedToStep2}
+          >
+            Define Production Ratios →
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+            <button
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 hover:bg-slate-100"
+              style={{ color: '#64748B', border: '1px solid #E2E8F0' }}
+              onClick={() => setStep(1)}
+            >
+              ← Items
+            </button>
+            <button
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#6366F1', color: '#fff' }}
+              onClick={handleSave}
+              disabled={!canSave}
+            >
+              <Check size={14} />
+              Save Recipe
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Recipe tabs bar — shown when more than 1 recipe */}
@@ -434,95 +506,170 @@ export default function RecipeBuilder({ item, initialRecipes, outputFormFactor, 
         </div>
       )}
 
-      {/* Canvas */}
-      <div className="flex-1 overflow-y-auto p-8">
-        {/* 3-zone layout: sources | arrow | output */}
-        <div
-          className="max-w-4xl mx-auto"
-          style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0 24px', alignItems: 'start' }}
-        >
-          {/* Sources column */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10B981' }} />
-              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>
-                Sources
-              </h2>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium ml-auto"
-                style={{ backgroundColor: '#DCFCE7', color: '#10B981' }}
-              >
-                {sourcesCount}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {sources.map(node => (
-                <SourceNodeCard
-                  key={node.id}
-                  node={node}
-                  data={data}
-                  onEdit={handleEditSource}
-                  onDelete={() => handleDeleteSource(node.id)}
+      {/* Canvas — 2-page slider */}
+      <div className="flex-1 overflow-hidden relative">
+        <div style={{
+          display: 'flex',
+          width: '200%',
+          height: '100%',
+          transform: step === 2 ? 'translateX(-50%)' : 'translateX(0)',
+          transition: 'transform 300ms ease-in-out',
+        }}>
+
+          {/* Page 1 — define source items */}
+          <div style={{ width: '50%', overflowY: 'auto' }} className="p-8">
+            {/* 3-zone layout: sources | arrow | output */}
+            <div
+              className="max-w-4xl mx-auto"
+              style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0 24px', alignItems: 'start' }}
+            >
+              {/* Sources column */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10B981' }} />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                    Sources
+                  </h2>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-medium ml-auto"
+                    style={{ backgroundColor: '#DCFCE7', color: '#10B981' }}
+                  >
+                    {sourcesCount}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {sources.map(node => (
+                    <SourceNodeCard
+                      key={node.id}
+                      node={node}
+                      data={data}
+                      hideQty
+                      onEdit={handleEditSource}
+                      onDelete={() => handleDeleteSource(node.id)}
+                    />
+                  ))}
+                  <AddSourceNodeCard
+                    data={data}
+                    hideQty
+                    onAdd={handleAddSource}
+                  />
+                </div>
+              </div>
+
+              {/* Arrow connector */}
+              <div className="flex flex-col items-center justify-center pt-10" style={{ width: '48px' }}>
+                <ArrowRight size={22} style={{ color: sourcesCount >= 1 && output ? '#6366F1' : '#CBD5E1' }} />
+              </div>
+
+              {/* Output column */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6366F1' }} />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                    Output
+                  </h2>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-medium ml-auto"
+                    style={{
+                      backgroundColor: output ? '#EEF2FF' : '#F1F5F9',
+                      color: output ? '#6366F1' : '#94A3B8',
+                    }}
+                  >
+                    {item?.name}
+                  </span>
+                </div>
+                <DestinationCard
+                  output={output}
+                  item={item}
                 />
-              ))}
-              <AddSourceNodeCard
-                data={data}
-                onAdd={handleAddSource}
-              />
+              </div>
             </div>
-          </div>
 
-          {/* Arrow connector — compact, centered vertically */}
-          <div className="flex flex-col items-center justify-center pt-10" style={{ width: '48px' }}>
-            <ArrowRight size={22} style={{ color: sourcesCount >= 1 && output ? '#6366F1' : '#CBD5E1' }} />
-          </div>
-
-          {/* Output column */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6366F1' }} />
-              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>
-                Output
-              </h2>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium ml-auto"
-                style={{
-                  backgroundColor: output ? '#EEF2FF' : '#F1F5F9',
-                  color: output ? '#6366F1' : '#94A3B8',
-                }}
+            {/* Hint */}
+            {!canProceedToStep2 && (
+              <div
+                className="mt-8 max-w-4xl mx-auto px-4 py-3 rounded-xl text-sm text-center"
+                style={{ backgroundColor: '#FFF7ED', color: '#92400E', border: '1px solid #FED7AA' }}
               >
-                {item?.name}
-              </span>
+                Add at least one source to continue.
+              </div>
+            )}
+
+            {/* Legend */}
+            <div className="mt-8 max-w-4xl mx-auto flex items-center gap-6 justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10B981' }} />
+                <span className="text-xs" style={{ color: '#64748B' }}>Sources ({sourcesCount})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6366F1' }} />
+                <span className="text-xs" style={{ color: '#64748B' }}>Output (fixed to {item?.name})</span>
+              </div>
             </div>
-            <DestinationCard
-              output={output}
-              item={item}
-              data={data}
-              onEdit={handleSetOutput}
-            />
           </div>
-        </div>
 
-        {/* Save hint — shown when recipe is incomplete */}
-        {!canSave && (
-          <div
-            className="mt-8 max-w-4xl mx-auto px-4 py-3 rounded-xl text-sm text-center"
-            style={{ backgroundColor: '#FFF7ED', color: '#92400E', border: '1px solid #FED7AA' }}
-          >
-            Add at least one source to enable saving.
-          </div>
-        )}
+          {/* Page 2 — define production ratios */}
+          <div style={{ width: '50%', overflowY: 'auto' }} className="p-8">
+            <div className="max-w-2xl mx-auto">
+              {/* Destination card — centered at top */}
+              <div className="flex justify-center mb-2">
+                <DestinationCard
+                  output={output}
+                  item={item}
+                  uomSymbol={destUomSymbol}
+                />
+              </div>
 
-        {/* Legend */}
-        <div className="mt-8 max-w-4xl mx-auto flex items-center gap-6 justify-center">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10B981' }} />
-            <span className="text-xs" style={{ color: '#64748B' }}>Sources ({sourcesCount})</span>
+              {/* Down connector */}
+              <div className="flex justify-center mb-2">
+                <div style={{ width: 2, height: 32, backgroundColor: '#C7D2FE' }} />
+              </div>
+
+              {/* Source ratio cards */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                {sources.map(node => (
+                  <RatioSourceCard
+                    key={node.id}
+                    node={node}
+                    data={data}
+                    onUpdateQty={handleUpdateSourceQty}
+                    onDelete={() => handleDeleteSource(node.id)}
+                  />
+                ))}
+              </div>
+
+              {/* Helper text */}
+              <div className="mt-10 text-center">
+                <p className="text-lg font-semibold" style={{ color: '#1E1B4B' }}>
+                  How much source material is required to produce{' '}
+                  <input
+                    type="number"
+                    value={output?.qty ?? 1}
+                    onChange={e => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v > 0) handleSetOutput({ ...output, qty: v });
+                    }}
+                    min="0.001"
+                    step="any"
+                    className="outline-none border-b-2 text-center font-semibold"
+                    style={{
+                      width: '56px',
+                      borderColor: '#6366F1',
+                      color: '#6366F1',
+                      backgroundColor: 'transparent',
+                      fontSize: 'inherit',
+                    }}
+                  />
+                  {' '}{destUomSymbol} of{' '}
+                  <span style={{ color: '#6366F1' }}>{item?.name}</span>?
+                </p>
+                <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>
+                  Enter the quantity for each source above.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6366F1' }} />
-            <span className="text-xs" style={{ color: '#64748B' }}>Output (fixed to {item?.name})</span>
-          </div>
+
         </div>
       </div>
     </div>
