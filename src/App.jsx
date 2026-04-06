@@ -349,29 +349,32 @@ export default function App() {
       case 9:
         if (!activeModal && powder?.lots?.some(l => l.transactions?.some(t => t.type === 'move'))) advance();
         break;
-      case 11: if (selectedCategoryId === 'finished-goods') advance(); break;
+      case 11: if (selectedCategoryId === '__recipes') advance(); break;
       case 12: if (activeModal?.type === 'editRecipe') advance(); break;
       case 13:
         if (marker?.formFactorRecipes?.['200L drum'] != null && !activeModal) advance();
         break;
-      case 14:
+      case 14: if (selectedCategoryId === 'finished-goods') advance(); break;
+      case 15:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      // steps 15, 16, 17, 18 are manual Next (location/sources/dest/status spotlight)
-      case 19:
+      // steps 16, 17, 18, 19 are manual Next (location/sources/dest/status spotlight)
+      case 20:
         if (!activeModal && marker?.lots?.some(l => l.transactions?.some(t => t.type === 'produce'))) advance();
         break;
-      case 21: if (activeModal?.type === 'editRecipe') advance(); break;
-      case 22:
+      case 22: if (selectedCategoryId === '__recipes') advance(); break;
+      case 23: if (activeModal?.type === 'editRecipe') advance(); break;
+      case 24:
         if (marker?.formFactorRecipes?.['5L Jerry can'] != null && !activeModal) advance();
         break;
-      case 23:
+      case 25: if (selectedCategoryId === 'finished-goods') advance(); break;
+      case 26:
         if (activeModal?.type === 'produceLot' && activeModal?.payload?.item?.id === 'marker-001') advance();
         break;
-      case 27:
+      case 30:
         if (!activeModal && marker?.lots?.some(l => l.formFactor === '5L Jerry can' && l.transactions?.some(t => t.type === 'draw-down'))) advance();
         break;
-      case 29: if (activeModal?.type === 'lotHistory') advance(); break;
+      case 32: if (activeModal?.type === 'lotHistory') advance(); break;
       default: break;
     }
   }, [tutorialStep, tutorialType, selectedCategoryId, managerActiveTab, activeModal, data]);
@@ -1199,7 +1202,7 @@ export default function App() {
           {[
             { id: '__uom',       label: 'Units of Measure', Icon: Ruler,        tutorialId: 'sidebar-uom'       },
             { id: '__locations', label: 'Locations',         Icon: MapPin,        tutorialId: 'sidebar-locations' },
-            { id: '__recipes',   label: 'Recipes',           Icon: FlaskConical,  tutorialId: undefined           },
+            { id: '__recipes',   label: 'Recipes',           Icon: FlaskConical,  tutorialId: 'sidebar-recipes'   },
           ].map(({ id, label, Icon, tutorialId }) => {
             const isActive = selectedCategoryId === id;
             return (

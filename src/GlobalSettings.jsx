@@ -493,6 +493,11 @@ export function RecipesSection({ data, onOpenModal }) {
                       </td>
                       <td className="py-3 px-3 text-right">
                         <button
+                          data-tutorial={
+                            item.id === 'marker-001' && ff === '200L drum' ? 'recipe-btn-marker-200L' :
+                            item.id === 'marker-001' && ff === '5L Jerry can' ? 'drawdown-btn-marker-5L' :
+                            undefined
+                          }
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ backgroundColor: colors.text, color: '#fff' }}
                           onClick={() => onOpenModal('editRecipe', { categoryId: cat.id, item, formFactor: ff })}
