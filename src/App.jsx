@@ -225,8 +225,44 @@ const INITIAL_DATA = {
     {
       id: 'consumables',
       name: 'Consumables',
-      formFactors: [],
-      items: [],
+      formFactors: [{ name: 'unit' }],
+      items: [
+        {
+          id: 'cuv-001', name: 'cuvettes', sku: 'CUV-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'cuv-lid-001', name: 'cuvette lids', sku: 'CVL-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'pip-001', name: 'pasteur pipettes', sku: 'PIP-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'vial-001', name: 'clear vials', sku: 'VIL-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'alb-001', name: 'Al bottles', sku: 'ALB-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'alb-cap-001', name: 'Al bottle caps', sku: 'ABC-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+        {
+          id: 'btm-001', name: 'bottling machines', sku: 'BTM-001', uomId: 'pcs',
+          formFactors: ['unit'], defaultFormFactor: 'unit',
+          lots: [], warehousePolicies: [], formFactorTypes: { unit: 'To Purchase' }, formFactorRecipes: {}, orders: [],
+        },
+      ],
       attributeSchemas: [],
     },
   ],
@@ -236,8 +272,9 @@ const INITIAL_DATA = {
     { id: 'LOC-003', name: 'Satellite Warehouse', type: 'Warehouse', capacity: 5000 },
   ],
   uom: [
-    { id: 'kg', name: 'Kilogram', symbol: 'kg', type: 'weight' },
-    { id: 'l',  name: 'Litre',    symbol: 'L',  type: 'volume' },
+    { id: 'kg',  name: 'Kilogram', symbol: 'kg',  type: 'weight' },
+    { id: 'l',   name: 'Litre',    symbol: 'L',   type: 'volume' },
+    { id: 'pcs', name: 'Piece',    symbol: 'pcs', type: 'count'  },
   ],
   uomConversions: [],
 };
