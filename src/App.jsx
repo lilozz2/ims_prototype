@@ -223,8 +223,8 @@ const INITIAL_DATA = {
       ],
     },
     {
-      id: 'misc',
-      name: 'Misc',
+      id: 'consumables',
+      name: 'Consumables',
       formFactors: [],
       items: [],
       attributeSchemas: [],
