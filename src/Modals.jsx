@@ -231,7 +231,7 @@ function makeEntry() {
   return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), qty: '', attrValues: {} };
 }
 
-export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, locations, onSubmit, onClose }) {
+export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLabel, uomSymbol, locations, onSubmit, onClose }) {
   const [formFactor] = useState(preselectedFormFactor || item?.defaultFormFactor || '');
   const [locationId, setLocationId] = useState('');
   const [loadingSchema, setLoadingSchema] = useState(false);
@@ -428,13 +428,18 @@ export function PurchaseLotsModal({ category, item, preselectedFormFactor, uomLa
 
             {/* Quantity */}
             <FormField label="Quantity" required>
-              <NumberInput
-                value={entry.qty}
-                onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
-                placeholder="0"
-                min="0"
-                step="any"
-              />
+              <div className="flex items-center gap-2">
+                <NumberInput
+                  value={entry.qty}
+                  onChange={e => updateEntry(entry.id, 'qty', e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="any"
+                />
+                {uomSymbol && (
+                  <span className="text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>{uomSymbol}</span>
+                )}
+              </div>
             </FormField>
           </div>
         ))}

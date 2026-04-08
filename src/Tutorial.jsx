@@ -200,18 +200,35 @@ export const TUTORIAL_STEPS = [
     bullets: [
       'Add 3 rows (one per lot)',
       'Quantity per lot: 2.5',
-      'Price per lot: $5.00',
     ],
     instruction: 'Fill in all 3 rows, then click Purchase Lots',
   },
   // 7
+  {
+    id: 'attach-order',
+    type: 'spotlight',
+    target: '[data-tutorial="lot-area-powder-bag"]',
+    position: 'top',
+    title: 'Attach a Purchase Order',
+    description: 'Link these lots to a purchase order for cost tracking. Select all 3 powder lots using the checkboxes, then open Batch Actions and choose "Attach Order".',
+    instruction: 'Select all lots → Batch Actions → Attach Order',
+  },
+  // 8
+  {
+    id: 'attach-order-modal',
+    type: 'corner',
+    title: 'Enter the Order Total',
+    description: 'Enter the total purchase price for this order and confirm.',
+    instruction: 'Fill in the total price and click Attach Order',
+  },
+  // 9
   {
     id: 'milestone-purchase',
     type: 'milestone',
     phase: 0,
     text: "Your raw materials are now in SG Warehouse. Next, you'll batch move the lots to Uchkun Warehouse — where production happens.",
   },
-  // 8
+  // 10
   {
     id: 'select-and-move',
     type: 'spotlight',
@@ -221,7 +238,7 @@ export const TUTORIAL_STEPS = [
     description: 'Use the checkboxes to select the powder lots. The Batch Actions button will appear in the header — click it, then choose Move.',
     instruction: 'Select lots → Batch Actions → Move',
   },
-  // 9
+  // 11
   {
     id: 'move-to-Uchkun',
     type: 'corner',
@@ -229,14 +246,14 @@ export const TUTORIAL_STEPS = [
     description: 'Select Uchkun Warehouse as the destination and confirm.',
     instruction: 'Set the destination to Uchkun Warehouse and click Move Lots',
   },
-  // 10
+  // 12
   {
     id: 'milestone-move',
     type: 'milestone',
     phase: 1,
     text: "Lots are at Uchkun Warehouse. Time to set up a production recipe and manufacture Marker Solution (200L drum).",
   },
-  // 11
+  // 13
   {
     id: 'navigate-to-recipes',
     type: 'spotlight',
@@ -246,7 +263,7 @@ export const TUTORIAL_STEPS = [
     description: 'Navigate to the Recipes section to define how Marker Solution is manufactured.',
     instruction: 'Click "Recipes" under Configuration in the sidebar',
   },
-  // 12
+  // 14
   {
     id: 'create-production-recipe',
     type: 'spotlight',
@@ -256,7 +273,7 @@ export const TUTORIAL_STEPS = [
     description: 'Find Marker Solution (200L Drum) in the list. Click Create Recipe to define the formula.',
     instruction: 'Click "Create Recipe" on the Marker Solution (200L drum) row',
   },
-  // 13
+  // 15
   {
     id: 'define-recipe',
     type: 'corner',
@@ -271,7 +288,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: "Add both sources, set ratios in Stage 2, then click 'Save Recipe'",
   },
-  // 14
+  // 16
   {
     id: 'navigate-to-finished-goods',
     type: 'spotlight',
@@ -281,7 +298,7 @@ export const TUTORIAL_STEPS = [
     description: 'Recipe saved! Now navigate to Finished Goods to start a production run.',
     instruction: 'Click "Finished Goods" in the sidebar',
   },
-  // 15
+  // 17
   {
     id: 'produce-marker',
     type: 'spotlight',
@@ -291,7 +308,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your recipe is saved. Click Produce to start a production run for Marker Solution.',
     instruction: 'Click "Produce" on the Marker Solution (200L drum) row',
   },
-  // 16
+  // 18
   {
     id: 'exec-select-location',
     type: 'spotlight',
@@ -302,7 +319,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select "Uchkun Warehouse" from the dropdown, then click Next',
     showNext: true,
   },
-  // 17
+  // 19
   {
     id: 'sources-section',
     type: 'spotlight',
@@ -317,7 +334,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select lots and set quantities, then click Next',
     showNext: true,
   },
-  // 18
+  // 20
   {
     id: 'destination-section',
     type: 'spotlight',
@@ -333,7 +350,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Add 1 lot row with qty 22, then click Next',
     showNext: true,
   },
-  // 19
+  // 21
   {
     id: 'status-section',
     type: 'spotlight',
@@ -349,7 +366,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Confirm both sources are green, then click Next',
     showNext: true,
   },
-  // 20
+  // 22
   {
     id: 'fill-and-produce',
     type: 'corner',
@@ -357,14 +374,14 @@ export const TUTORIAL_STEPS = [
     description: 'Select source lots for each raw material, add destination lots, and confirm the production run.',
     instruction: 'Fill in the form and click Produce',
   },
-  // 21
+  // 23
   {
     id: 'milestone-manufacture',
     type: 'milestone',
     phase: 2,
     text: "Marker Solution is now in 200L drums. Next, draw it down into smaller 5L Jerry cans for distribution.",
   },
-  // 22
+  // 24
   {
     id: 'navigate-to-recipes-drawdown',
     type: 'spotlight',
@@ -374,7 +391,7 @@ export const TUTORIAL_STEPS = [
     description: 'Navigate to the Recipes section to define the draw-down ratio for the 5L Jerrycan.',
     instruction: 'Click "Recipes" under Configuration in the sidebar',
   },
-  // 23
+  // 25
   {
     id: 'create-drawdown-recipe',
     type: 'spotlight',
@@ -384,7 +401,7 @@ export const TUTORIAL_STEPS = [
     description: 'Find Marker Solution (5L Jerrycan) in the list. Click Create Recipe to define the draw-down ratio.',
     instruction: 'Click "Create Recipe" on the Marker Solution (5L Jerry can) row',
   },
-  // 24
+  // 26
   {
     id: 'define-drawdown',
     type: 'corner',
@@ -398,7 +415,7 @@ export const TUTORIAL_STEPS = [
     ],
     instruction: "Add the source, set the ratio in Stage 2, then click 'Save Recipe'",
   },
-  // 25
+  // 27
   {
     id: 'navigate-to-finished-goods-drawdown',
     type: 'spotlight',
@@ -408,7 +425,7 @@ export const TUTORIAL_STEPS = [
     description: 'Recipe saved! Navigate back to Finished Goods to execute the draw-down.',
     instruction: 'Click "Finished Goods" in the sidebar',
   },
-  // 26
+  // 28
   {
     id: 'execute-drawdown',
     type: 'spotlight',
@@ -418,7 +435,7 @@ export const TUTORIAL_STEPS = [
     description: 'Your draw-down recipe is ready. Click Draw Down to fill 5L Jerry cans from the 200L drum stock.',
     instruction: 'Click "Draw Down" on the Marker Solution (5L Jerry can) row',
   },
-  // 27
+  // 29
   {
     id: 'fill-drawdown-location-source',
     type: 'spotlight',
@@ -429,18 +446,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Select "Uchkun Warehouse" as location, then select the produced lot as the source, then click Next',
     showNext: true,
   },
-  // 28
-  {
-    id: 'fill-drawdown-attributes',
-    type: 'spotlight',
-    target: '[data-tutorial="exec-destination-section"]',
-    position: 'left',
-    title: '📋 Copy Source Attributes',
-    description: 'Pre-fill the destination lot\'s attributes by copying from the source lot. Use the "Copy from" dropdown in the Attributes header.',
-    instruction: 'Use "Copy from" to copy attributes from the source lot, then click Next',
-    showNext: true,
-  },
-  // 29
+  // 30
   {
     id: 'fill-drawdown-dest-lots',
     type: 'spotlight',
@@ -451,7 +457,7 @@ export const TUTORIAL_STEPS = [
     instruction: 'Add 2 destination lots of 11L each, then click Next',
     showNext: true,
   },
-  // 30
+  // 31
   {
     id: 'fill-drawdown-execute',
     type: 'spotlight',
@@ -461,14 +467,14 @@ export const TUTORIAL_STEPS = [
     description: 'Review the status summary to ensure everything balances, then click Draw Down to complete the transaction.',
     instruction: 'Check status, then click Draw Down',
   },
-  // 31
+  // 32
   {
     id: 'milestone-drawdown',
     type: 'milestone',
     phase: 3,
     text: "Draw-down complete! Finally, let's view the full transaction history — every step of this workflow is recorded here.",
   },
-  // 32
+  // 33
   {
     id: 'view-history',
     type: 'corner',
@@ -476,7 +482,7 @@ export const TUTORIAL_STEPS = [
     description: 'Click on any lot card to see its full transaction history — purchases, productions, draw-downs, and moves are all recorded here.',
     instruction: 'Click any lot card to open its history',
   },
-  // 33
+  // 34
   {
     id: 'completion',
     type: 'completion',
